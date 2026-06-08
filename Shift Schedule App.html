@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Schedule — Prototype</title>
+<link rel="stylesheet" href="app/styles.css">
+<style>
+  html,body{margin:0;background:#efe9dc}
+  .caption{margin-top:20px;text-align:center;color:#6c655a;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;max-width:520px}
+  .caption b{color:#23201b}
+  #root{font-family:'IBM Plex Sans',system-ui,sans-serif}
+  .loading{min-height:100vh;display:grid;place-items:center;color:#9a9286;font-family:system-ui}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading…</div></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- data + strings (plain JS) -->
+<script src="app/data.js"></script>
+<script src="app/i18n.js"></script>
+
+<!-- components (JSX) -->
+<script type="text/babel" src="app/ios-frame.jsx"></script>
+<script type="text/babel" src="app/browser-window.jsx"></script>
+<script type="text/babel" src="app/ui.jsx"></script>
+<script type="text/babel" src="app/owner.jsx"></script>
+<script type="text/babel" src="app/employee.jsx"></script>
+<script type="text/babel" src="app/manager.jsx"></script>
+
+<!-- shell -->
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+
+const GEM_URL = 'https://gemini.google.com/gem/1E2sO0quvhHhyTPUYeN_KWs-kUSiA8veO?usp=sharing';
+
+/* ---- month switcher ---- */
+function MonthMenu({ months, activeKey, onPick, onNew, lang }) {
+  const [open, setOpen] = useState(false);
+  const active = months.find(m => m.key === activeKey) || months[0];
+  const T = (k) => window.t(k, lang);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(!open)} style={{ appearance: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+        background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 10, padding: '7px 12px', fontFamily: 'var(--sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>
+        <Icon name="calendar" size={15} color="var(--accent)" />{lang === 'en' ? active.label.en : active.label.el}
+        <Icon name="chevron" size={12} style={{ transform: 'rotate(90deg)' }} />
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', left: 0, top: '116%', zIndex: 200, background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 12, padding: 6, minWidth: 210, boxShadow: '0 16px 38px rgba(0,0,0,.18)' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--faint)', padding: '6px 10px 4px' }}>{T('months_l')}</div>
+          {months.map(m => (
+            <div key={m.key} onClick={() => { onPick(m.key); setOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: m.key === activeKey ? 700 : 500, background: m.key === activeKey ? 'var(--paper)' : 'transparent' }}>
+              {lang === 'en' ? m.label.en : m.label.el}
+              {m.key === activeKey && <Icon name="check" size={15} color="var(--green)" style={{ marginLeft: 'auto' }} />}
+            </div>
+          ))}
+          <div onClick={() => { onNew(); setOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: 'var(--accent)', borderTop: '1px solid var(--line)', marginTop: 4 }}>
+            <Icon name="plus" size={15} />{T('new_month_cta')}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Gemini assistant launcher ---- */
+function ChatLauncher({ lang }) {
+  const [open, setOpen] = useState(false);
+  const T = (k) => window.t(k, lang);
+  const prompts = lang === 'en'
+    ? ['Who is overloaded with nights?', 'Fill gaps on understaffed days', 'Draft next month from this one']
+    : ['Ποιος έχει πολλές νύχτες;', 'Κάλυψε τις ελλείψεις προσωπικού', 'Φτιάξε τον επόμενο μήνα'];
+  return (
+    <React.Fragment>
+      <button onClick={() => setOpen(!open)} title={T('assistant')} style={{ position: 'fixed', right: 22, bottom: 22, zIndex: 300, width: 58, height: 58, borderRadius: '50%',
+        border: 0, cursor: 'pointer', background: 'linear-gradient(135deg,#b5482b,#8f3115)', color: '#fff', boxShadow: '0 10px 26px rgba(143,49,21,.4)', display: 'grid', placeItems: 'center' }}>
+        <Icon name={open ? 'x' : 'sparkle'} size={24} />
+      </button>
+      {open && (
+        <div style={{ position: 'fixed', right: 22, bottom: 92, zIndex: 300, width: 360, maxWidth: 'calc(100vw - 44px)', background: 'var(--card)', border: '1px solid var(--line2)',
+          borderRadius: 18, boxShadow: '0 24px 60px rgba(0,0,0,.26)', overflow: 'hidden', fontFamily: 'var(--sans)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '16px 18px', background: 'linear-gradient(135deg,#b5482b,#8f3115)', color: '#fff' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(255,255,255,.18)', display: 'grid', placeItems: 'center' }}><Icon name="sparkle" size={20} /></div>
+            <div><div style={{ fontWeight: 700, fontSize: 15 }}>{T('assistant')}</div><div style={{ fontSize: 11.5, opacity: .85 }}>{T('assistant_sub')} · Gemini</div></div>
+          </div>
+          <div style={{ padding: 16 }}>
+            <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--soft)', lineHeight: 1.5 }}>{T('assistant_intro')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+              {prompts.map((p, i) => (
+                <a key={i} href={GEM_URL} target="_blank" rel="noopener" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 11,
+                  background: 'var(--paper)', border: '1px solid var(--line)', fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
+                  <Icon name="sparkle" size={14} color="var(--accent)" />{p}
+                </a>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1px solid var(--line2)', borderRadius: 12, padding: '8px 8px 8px 13px', background: 'var(--paper)' }}>
+              <input placeholder={T('ask_placeholder')} style={{ flex: 1, border: 0, outline: 'none', background: 'transparent', fontFamily: 'var(--sans)', fontSize: 13.5, color: 'var(--ink)' }}
+                onKeyDown={e => { if (e.key === 'Enter') window.open(GEM_URL, '_blank'); }} />
+              <a href={GEM_URL} target="_blank" rel="noopener" style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', textDecoration: 'none' }}><Icon name="arrow" size={16} /></a>
+            </div>
+            <a href={GEM_URL} target="_blank" rel="noopener" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 12, fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
+              {T('open_assistant')} <Icon name="arrow" size={14} />
+            </a>
+          </div>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+function Shell() {
+  const D = window.APP_DATA;
+  const [role, setRole] = useState('employee');
+  const [lang, setLang] = useState('el');
+  const [months, setMonths] = useState(D.months.slice());
+  const [activeKey, setActiveKey] = useState(D.months[0].key);
+  const T = (k) => window.t(k, lang);
+
+  const activeMonth = months.find(m => m.key === activeKey) || months[0];
+  D.setActive(activeKey);
+
+  function pickMonth(key) { D.setActive(key); setActiveKey(key); }
+  function newMonth() { const mo = D.addMonth(); setMonths(D.months.slice()); pickMonth(mo.key); }
+  window.__addMonth = newMonth;
+  function importMonth(parsed, fileName) { const mo = D.monthFromImport(parsed, fileName); setMonths(D.months.slice()); pickMonth(mo.key); return mo; }
+  window.__importMonth = importMonth;
+
+  const roleOpts = [
+    { v: 'employee', l: T('role_employee') },
+    { v: 'manager', l: T('role_manager') },
+    { v: 'owner', l: T('role_owner') }
+  ];
+
+  const caption = {
+    employee: lang === 'en'
+      ? <span><b>Employee · mobile.</b> View your month & the team week, request a swap or leave, set preferences. Writes are requests — never direct edits.</span>
+      : <span><b>Υπάλληλος · κινητό.</b> Δες τον μήνα σου & την ομάδα, ζήτα αλλαγή ή άδεια, όρισε προτιμήσεις. Οι ενέργειες είναι αιτήματα — όχι απευθείας αλλαγές.</span>,
+    manager: lang === 'en'
+      ? <span><b>Manager · desktop.</b> Edit the grid, switch months, watch coverage, triage warnings & approve requests — everything recomputes live.</span>
+      : <span><b>Διαχειριστής · υπολογιστής.</b> Επεξεργάσου το πλέγμα, άλλαξε μήνα, δες κάλυψη, διαχειρίσου προειδοποιήσεις & ενέκρινε αιτήματα — όλα ζωντανά.</span>,
+    owner: lang === 'en'
+      ? <span><b>Owner · desktop.</b> Everything a manager sees, plus editable roles, thresholds, sharing, automation and new months.</span>
+      : <span><b>Ιδιοκτήτης · υπολογιστής.</b> Ό,τι βλέπει ο διαχειριστής, συν αλλαγή ρόλων, όρια, κοινή χρήση, αυτοματισμοί και νέοι μήνες.</span>
+  };
+
+  return (
+    <div className="app stage">
+      <div className="topbar">
+        <div className="brand"><span className="dot serif">Σ</span>
+          <div>{T('appname')}<small>{lang === 'en' ? 'prototype' : 'πρωτότυπο'}</small></div>
+        </div>
+        <div className="controls">
+          <MonthMenu months={months} activeKey={activeKey} onPick={pickMonth} onNew={newMonth} lang={lang} />
+          <div className="seg">
+            {roleOpts.map(o => <button key={o.v} className={role === o.v ? 'on' : ''} onClick={() => setRole(o.v)}>{o.l}</button>)}
+          </div>
+          <div className="langtoggle">
+            <button className={lang === 'el' ? 'on' : ''} onClick={() => setLang('el')}>ΕΛ</button>
+            <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>EN</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="canvas">
+        {role === 'employee'
+          ? <IOSDevice key={'e-' + activeKey}><EmployeeApp lang={lang} month={activeMonth} /></IOSDevice>
+          : <ChromeWindow width={1200} height={760} url={lang === 'en' ? 'schedule.app/manager' : 'schedule.app/diaxeirisi'}
+              tabs={[{ title: (lang === 'en' ? activeMonth.label.en : activeMonth.label.el), active: true }]}>
+              <ManagerApp key={role + '-' + activeKey} lang={lang} role={role} month={activeMonth} />
+            </ChromeWindow>}
+      </div>
+
+      <div className="caption">{caption[role]}</div>
+      <ChatLauncher lang={lang} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Shell />);
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Schedule — Developer Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f3ec; --card:#fffdf8; --ink:#23201b; --soft:#6c655a; --faint:#9a9286;
+    --line:#e3ddd0; --line2:#d4ccbb; --accent:#b5482b; --accent-soft:#f3e3dc;
+    --blue:#2f5d77; --blue-soft:#e1ebf0; --green:#3f6b41; --green-soft:#e2ecdd; --amber:#9a6b16; --amber-soft:#f6ecd6;
+    --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'IBM Plex Sans',system-ui,sans-serif; --serif:'Newsreader',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:228px 1fr;gap:56px}
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:48px 0 40px;border-right:1px solid var(--line)}
+  aside .brand{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.2}
+  aside .brand small{display:block;font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+  nav{margin-top:28px;font-size:13.5px}
+  nav a{display:block;color:var(--soft);text-decoration:none;padding:5px 0 5px 14px;border-left:2px solid transparent;margin-left:-2px}
+  nav a:hover{color:var(--ink)}
+  nav a .n{color:var(--faint);font-family:var(--mono);font-size:11px;margin-right:8px}
+  main{padding:64px 0 120px;min-width:0}
+  .kick{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+  h1{font-family:var(--serif);font-weight:500;font-size:44px;line-height:1.05;letter-spacing:-.02em;margin:0 0 18px}
+  .lede{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--soft);max-width:62ch;margin:0}
+  section{margin-bottom:52px;scroll-margin-top:30px}
+  h2{font-family:var(--serif);font-weight:500;font-size:29px;letter-spacing:-.015em;margin:0 0 10px;padding-top:14px}
+  h2 .num{font-family:var(--mono);font-size:14px;color:var(--accent);vertical-align:6px;margin-right:14px}
+  h3{font-size:15px;font-weight:600;margin:26px 0 9px}
+  p{margin:0 0 14px;max-width:70ch}.sub{color:var(--soft);max-width:70ch}
+  code{font-family:var(--mono);font-size:.85em;background:#efe9dd;color:#5a4434;padding:1px 6px;border-radius:4px;border:1px solid var(--line2)}
+  strong{font-weight:600}
+  pre{background:#26211b;color:#e9e1d2;border-radius:10px;padding:18px 20px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;margin:16px 0}
+  pre .c{color:#9a8f78}pre .k{color:#e0a07a}pre .g{color:#a9c99b}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);padding:0 14px 8px;border-bottom:1.5px solid var(--line2)}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.mono{font-family:var(--mono);font-size:12px}
+  tr:last-child td{border-bottom:none}
+  .callout{border:1px solid var(--line2);background:var(--card);border-radius:12px;padding:18px 22px;margin:22px 0}
+  .callout .tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  .callout.rec{border-left:4px solid var(--green);background:var(--green-soft)}.callout.rec .tag{color:var(--green)}
+  .callout.warn{border-left:4px solid var(--amber);background:var(--amber-soft)}.callout.warn .tag{color:var(--amber)}
+  .callout p:last-child{margin-bottom:0}
+  ol.steps{list-style:none;counter-reset:s;margin:22px 0;padding:0}
+  ol.steps>li{counter-increment:s;position:relative;padding:16px 0 16px 56px;border-top:1px solid var(--line)}
+  ol.steps>li:last-child{border-bottom:1px solid var(--line)}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:14px;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--serif);font-size:17px;display:grid;place-items:center}
+  ol.steps h3{margin:0 0 3px}ol.steps p{margin:0;color:var(--soft);font-size:14px}
+  .flow{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line2);background:var(--card);border-radius:14px;padding:22px;margin:22px 0}
+  .frow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .fnode{border:1px solid var(--line2);border-radius:9px;padding:8px 13px;font-size:13px;font-weight:500;background:var(--paper)}
+  .fnode.acc{background:var(--accent-soft);border-color:#e3c6bb;color:var(--accent)}
+  .fnode.grn{background:var(--green-soft);border-color:#bcd3b6;color:var(--green)}
+  .fnode.blu{background:var(--blue-soft);border-color:#bcd0db;color:var(--blue)}
+  .farr{color:var(--faint);font-size:18px}
+  .tree{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--soft);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;white-space:pre;overflow:auto}
+  .tree b{color:var(--ink);font-weight:600}
+  footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:22px}
+  @media print{.wrap{display:block;max-width:none;padding:0}aside{display:none}main{padding:0}section{page-break-inside:avoid}body{background:#fff;font-size:11pt}pre,.tree{background:#f2efe8;color:#23201b;border:1px solid #ccc}}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;gap:0;padding:0 22px}aside{display:none}h1{font-size:33px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="brand">Phase 1<small>Developer Handoff</small></div>
+    <nav>
+      <a href="#what"><span class="n">00</span>What this is</a>
+      <a href="#flow"><span class="n">01</span>Data flow</a>
+      <a href="#tree"><span class="n">02</span>File tree</a>
+      <a href="#setup"><span class="n">03</span>Setup</a>
+      <a href="#env"><span class="n">04</span>Env vars</a>
+      <a href="#webhook"><span class="n">05</span>Webhook glue</a>
+      <a href="#routes"><span class="n">06</span>API surface</a>
+      <a href="#map"><span class="n">07</span>Prototype → routes</a>
+      <a href="#next"><span class="n">08</span>Next steps</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header style="margin-bottom:50px">
+      <div class="kick">Next.js · Google Sheets · Vercel</div>
+      <h1>The Vercel app, scaffolded</h1>
+      <p class="lede">A runnable Next.js skeleton that reads and writes your live spreadsheet through a service account, caches reads in Vercel KV, and stays fresh via an Apps Script webhook. The data path works end-to-end today; the polished screens are a port away.</p>
+    </header>
+
+    <section id="what">
+      <h2><span class="num">00</span>What this is (and isn't)</h2>
+      <p><strong>Is:</strong> the real backbone — auth, role gating, the Google data layer, the read cache, the compute (coverage/warnings/fairness ported 1:1 from the sheet), the write path, and the webhook. <code>npm run dev</code> and you'll see your June data rendered from the live sheet.</p>
+      <p class="sub"><strong>Isn't:</strong> the finished UI. The employee/manager pages here are thin demos that prove the pipe. The full mobile PWA + manager dashboards live in the design prototype — port those components onto these routes.</p>
+      <div class="callout rec">
+        <div class="tag">The one principle</div>
+        <p>Everything touches Google through <code>lib/sheets.ts</code> (the <code>SheetsRepository</code>). In phase 3 you replace that one file with a <code>PostgresRepository</code> of the same shape — <code>app/</code> and <code>compute.ts</code> never change.</p>
+      </div>
+    </section>
+
+    <section id="flow">
+      <h2><span class="num">01</span>Data flow</h2>
+      <div class="flow">
+        <div class="frow"><span class="fnode acc">Browser</span><span class="farr">→</span><span class="fnode">GET /api/schedule</span><span class="farr">→</span><span class="fnode blu">Vercel KV</span><span class="farr">→</span><span class="fnode grn">Sheets API</span></div>
+        <div class="frow"><span class="fnode acc">Manager edits</span><span class="farr">→</span><span class="fnode">POST /api/cell</span><span class="farr">→</span><span class="fnode grn">writes ΩΡΑΡΙΑ</span><span class="farr">→</span><span class="fnode">invalidate cache</span></div>
+        <div class="frow"><span class="fnode grn">Sheet edited directly</span><span class="farr">→</span><span class="fnode">Apps Script onEdit</span><span class="farr">→</span><span class="fnode">POST /api/webhook/sheets</span><span class="farr">→</span><span class="fnode">invalidate cache</span></div>
+      </div>
+      <p class="sub">Reads are cheap (cache, 60s TTL); writes go to the human-readable sheet only — the bound script mirrors them into <code>CODED</code> and runs validation. Two directions, two mechanisms.</p>
+    </section>
+
+    <section id="tree">
+      <h2><span class="num">02</span>File tree</h2>
+      <div class="tree"><b>vercel-app/</b>
+├─ <b>app/</b>
+│  ├─ page.tsx              <span style="color:#9a9286">role-based redirect</span>
+│  ├─ employee/page.tsx     <span style="color:#9a9286">team week (demo)</span>
+│  ├─ manager/page.tsx      <span style="color:#9a9286">live grid + KPIs</span>
+│  └─ api/
+│     ├─ schedule/route.ts        <span style="color:#9a9286">GET cached + derived</span>
+│     ├─ cell/route.ts            <span style="color:#9a9286">POST write (mgr/owner)</span>
+│     ├─ webhook/sheets/route.ts  <span style="color:#9a9286">POST from Apps Script</span>
+│     └─ auth/[...nextauth]/route.ts
+├─ <b>lib/</b>
+│  ├─ config.ts   <span style="color:#9a9286">geometry · thresholds · roles</span>
+│  ├─ google.ts   <span style="color:#9a9286">service-account client</span>
+│  ├─ shifts.ts   <span style="color:#9a9286">code↔shift · parse · category</span>
+│  ├─ sheets.ts   <span style="color:#9a9286">SheetsRepository  ← swap later</span>
+│  ├─ cache.ts    <span style="color:#9a9286">Vercel KV read-through</span>
+│  ├─ compute.ts  <span style="color:#9a9286">coverage · warnings · fairness</span>
+│  └─ auth.ts     <span style="color:#9a9286">NextAuth + role helper</span>
+├─ apps-script/webhook.gs
+├─ .env.example · README.md · package.json · tsconfig.json</div>
+    </section>
+
+    <section id="setup">
+      <h2><span class="num">03</span>Setup</h2>
+      <ol class="steps">
+        <li><h3>Install</h3><p><code>cd vercel-app &amp;&amp; npm install</code></p></li>
+        <li><h3>Service account</h3><p>Google Cloud → create a service account, enable the <strong>Sheets API</strong>, download the JSON key, and <strong>share the spreadsheet</strong> with the service-account email (Editor — the app writes cells).</p></li>
+        <li><h3>OAuth client</h3><p>Create a Google OAuth <em>Web</em> client; redirect URI <code>http://localhost:3000/api/auth/callback/google</code> (+ prod).</p></li>
+        <li><h3>Env</h3><p>Copy <code>.env.example</code> → <code>.env.local</code> and fill it in (next section).</p></li>
+        <li><h3>Run</h3><p><code>npm run dev</code> → open <code>localhost:3000</code>. Without a KV store it reads the sheet live; add KV for the cache.</p></li>
+        <li><h3>Deploy</h3><p><code>vercel</code>, add the same env vars + the KV integration, set <code>NEXTAUTH_URL</code> to prod.</p></li>
+      </ol>
+    </section>
+
+    <section id="env">
+      <h2><span class="num">04</span>Environment variables</h2>
+      <table>
+        <thead><tr><th>Var</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">GOOGLE_SA_EMAIL</td><td>Service-account address (shared on the sheet).</td></tr>
+          <tr><td class="mono">GOOGLE_SA_PRIVATE_KEY</td><td>From the JSON key; keep the literal <code>\n</code> escapes.</td></tr>
+          <tr><td class="mono">SCHEDULE_SHEET_ID</td><td>The spreadsheet ID (pre-filled to your June file).</td></tr>
+          <tr><td class="mono">GOOGLE_CLIENT_ID / _SECRET</td><td>OAuth web client for sign-in.</td></tr>
+          <tr><td class="mono">NEXTAUTH_SECRET / _URL</td><td>NextAuth session secret + base URL.</td></tr>
+          <tr><td class="mono">KV_REST_API_URL / _TOKEN</td><td>Vercel KV (auto-injected in prod).</td></tr>
+          <tr><td class="mono">WEBHOOK_SECRET</td><td>Shared secret with the Apps Script.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn"><div class="tag">Don't commit secrets</div><p>The SA key and <code>WEBHOOK_SECRET</code> belong in Vercel env vars and Apps Script <em>Script Properties</em> — never in the repo.</p></div>
+    </section>
+
+    <section id="webhook">
+      <h2><span class="num">05</span>Webhook glue</h2>
+      <p>Already wired into the delivered <code>Code.gs</code> (<code>notifyApp_()</code> fires from the installable <code>onEdit</code>). Configure it in Apps Script → <strong>Project Settings → Script Properties</strong>:</p>
+      <pre><span class="k">APP_WEBHOOK_URL</span>    = https://your-app.vercel.app/api/webhook/sheets
+<span class="k">APP_WEBHOOK_SECRET</span> = <span class="c">&lt;same string as WEBHOOK_SECRET in Vercel&gt;</span></pre>
+      <p class="sub">The handler verifies the <code>X-Secret</code> header and busts the cache — so a direct sheet edit shows up in the app within one read.</p>
+    </section>
+
+    <section id="routes">
+      <h2><span class="num">06</span>API surface</h2>
+      <table>
+        <thead><tr><th>Route</th><th>Method</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">/api/schedule</td><td>GET</td><td>Cached schedule + coverage + warnings + stats.</td></tr>
+          <tr><td class="mono">/api/cell</td><td>POST</td><td><code>{ ame, dayIndex, value }</code> — manager/owner only; writes + invalidates.</td></tr>
+          <tr><td class="mono">/api/webhook/sheets</td><td>POST</td><td>From Apps Script; <code>X-Secret</code> gated; invalidates cache.</td></tr>
+          <tr><td class="mono">/api/auth/*</td><td>—</td><td>NextAuth (Google).</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="map">
+      <h2><span class="num">07</span>Prototype → routes</h2>
+      <p>The design prototype's screens map straight onto these routes — the data contracts already match (<code>schedule.employees[].shifts[]</code>, the same category colours, the same warning shapes).</p>
+      <table>
+        <thead><tr><th>Prototype screen</th><th>Route</th><th>Data</th></tr></thead>
+        <tbody>
+          <tr><td>Employee mobile (month, team, requests)</td><td class="mono">/employee</td><td><code>/api/schedule</code> + a requests table (add)</td></tr>
+          <tr><td>Manager grid / coverage / warnings / fairness</td><td class="mono">/manager</td><td><code>/api/schedule</code>, edits via <code>/api/cell</code></td></tr>
+          <tr><td>Owner settings</td><td class="mono">/owner</td><td>thresholds in <code>lib/config.ts</code> → move to DB</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="next">
+      <h2><span class="num">08</span>Suggested next steps</h2>
+      <p class="sub">In order of value:</p>
+      <table>
+        <tbody>
+          <tr><td><strong>1 · Port the UI</strong></td><td>Move the prototype's React components onto <code>/employee</code> and <code>/manager</code> (they're already styled and data-shaped).</td></tr>
+          <tr><td><strong>2 · Requests model</strong></td><td>Add a <code>requests</code> store (KV or a tiny DB) so swaps/leave persist + drive notifications.</td></tr>
+          <tr><td><strong>3 · Realtime</strong></td><td>Have the webhook push to clients via SSE so edits appear without a refresh.</td></tr>
+          <tr><td><strong>4 · PWA + i18n</strong></td><td>Add the manifest/service worker and next-intl (EL/EN) for the employee app.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      The scaffold is in <code>vercel-app/</code> (download from the chat). Data path is live today; the prototype is the UI spec. Ask me to port a specific screen, add the requests model, or wire SSE.
+    </footer>
+  </main>
+</div>
+</body>
+</html>

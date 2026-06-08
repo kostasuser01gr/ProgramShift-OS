@@ -1,0 +1,15 @@
+# Vercel
+.vercel
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.thumbnail
+
+# Node (for vercel-app backend)
+vercel-app/node_modules
+vercel-app/.next
+vercel-app/.env.local
+
+# Uploads (user-generated, not committed)
+uploads/

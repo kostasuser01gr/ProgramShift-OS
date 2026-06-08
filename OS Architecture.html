@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Program Shift OS — Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --paper:#f6f3ec; --card:#fffdf8; --ink:#23201b; --soft:#6c655a; --faint:#9a9286;
+    --line:#e3ddd0; --line2:#d4ccbb; --accent:#b5482b; --accent-soft:#f3e3dc;
+    --blue:#2f5d77; --blue-soft:#e1ebf0; --green:#3f6b41; --green-soft:#e2ecdd; --amber:#9a6b16; --amber-soft:#f6ecd6;
+    --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'IBM Plex Sans',system-ui,sans-serif; --serif:'Newsreader',Georgia,serif; }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:230px 1fr;gap:56px}
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:48px 0 40px;border-right:1px solid var(--line)}
+  aside .brand{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.2}
+  aside .brand small{display:block;font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+  nav{margin-top:28px;font-size:13.5px}
+  nav a{display:block;color:var(--soft);text-decoration:none;padding:5px 0 5px 14px;border-left:2px solid transparent;margin-left:-2px}
+  nav a:hover{color:var(--ink)}
+  nav a .n{color:var(--faint);font-family:var(--mono);font-size:11px;margin-right:8px}
+  main{padding:64px 0 120px;min-width:0}
+  .kick{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+  h1{font-family:var(--serif);font-weight:500;font-size:45px;line-height:1.05;letter-spacing:-.02em;margin:0 0 18px}
+  .lede{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--soft);max-width:62ch;margin:0}
+  section{margin-bottom:52px;scroll-margin-top:30px}
+  h2{font-family:var(--serif);font-weight:500;font-size:29px;letter-spacing:-.015em;margin:0 0 10px;padding-top:14px}
+  h2 .num{font-family:var(--mono);font-size:14px;color:var(--accent);vertical-align:6px;margin-right:14px}
+  h3{font-size:15px;font-weight:600;margin:24px 0 9px}
+  p{margin:0 0 14px;max-width:70ch}.sub{color:var(--soft);max-width:70ch}
+  code{font-family:var(--mono);font-size:.85em;background:#efe9dd;color:#5a4434;padding:1px 6px;border-radius:4px;border:1px solid var(--line2)}
+  strong{font-weight:600}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);padding:0 14px 8px;border-bottom:1.5px solid var(--line2)}
+  td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.mono{font-family:var(--mono);font-size:12px}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .pill.live{background:var(--green-soft);color:var(--green)} .pill.soon{background:var(--amber-soft);color:var(--amber)}
+  .callout{border:1px solid var(--line2);background:var(--card);border-radius:12px;padding:18px 22px;margin:22px 0;border-left:4px solid var(--accent)}
+  .callout .tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;color:var(--accent)}
+  .callout.grn{border-left-color:var(--green)} .callout.grn .tag{color:var(--green)}
+  .callout p:last-child{margin-bottom:0}
+  .tree{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--soft);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;white-space:pre;overflow:auto}
+  .tree b{color:var(--ink)}
+  .flow{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line2);background:var(--card);border-radius:14px;padding:22px;margin:22px 0}
+  .frow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .fnode{border:1px solid var(--line2);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:500;background:var(--paper)}
+  .fnode.acc{background:var(--accent-soft);border-color:#e3c6bb;color:var(--accent)}
+  .fnode.grn{background:var(--green-soft);border-color:#bcd3b6;color:var(--green)}
+  .fnode.blu{background:var(--blue-soft);border-color:#bcd0db;color:var(--blue)}
+  .farr{color:var(--faint)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:18px 0}
+  .mc{border:1px solid var(--line);background:var(--card);border-radius:11px;padding:14px 16px}
+  .mc .h{font-weight:600;font-size:14px;margin-bottom:2px}
+  .mc .d{font-size:12.5px;color:var(--soft)}
+  footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:22px}
+  @media print{.wrap{display:block;max-width:none;padding:0}aside{display:none}main{padding:0}section{page-break-inside:avoid}body{background:#fff;font-size:11pt}.tree{background:#f2efe8;border:1px solid #ccc}}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;gap:0;padding:0 22px}aside{display:none}h1{font-size:33px}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="brand">Program Shift OS<small>Architecture</small></div>
+    <nav>
+      <a href="#what"><span class="n">00</span>What this is</a>
+      <a href="#shell"><span class="n">01</span>The shell</a>
+      <a href="#services"><span class="n">02</span>Shared services</a>
+      <a href="#modules"><span class="n">03</span>Module registry</a>
+      <a href="#perms"><span class="n">04</span>Permissions</a>
+      <a href="#ai"><span class="n">05</span>AI layer</a>
+      <a href="#files"><span class="n">06</span>File map</a>
+      <a href="#run"><span class="n">07</span>Run &amp; extend</a>
+      <a href="#prod"><span class="n">08</span>Path to production</a>
+      <a href="#limits"><span class="n">09</span>Honest limits</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header style="margin-bottom:50px">
+      <div class="kick">Modular operating platform</div>
+      <h1>Program Shift OS</h1>
+      <p class="lede">The shift schedule became a platform. One shell, one app dock, a command palette, a global AI assistant, automations that act on the live data, notifications, an audit trail, and 17 modules — all sharing a single services layer, all role-aware, in Greek &amp; English, light &amp; dark.</p>
+    </header>
+
+    <section id="what">
+      <h2><span class="num">00</span>What this is</h2>
+      <p>A genuinely working <strong>front-end operating platform</strong> built around your June schedule. Every visible feature either works against the live in-memory data or is clearly labelled <span class="pill soon">Coming soon</span>. It runs entirely in the browser — no build step — and persists tasks, notes, chat, automations and settings in <code>localStorage</code>.</p>
+      <div class="callout grn">
+        <div class="tag">Design principle</div>
+        <p>Nothing is faked. The launcher opens real modules; the command palette runs real commands; automations read the real coverage/warnings and fire real notifications + audit entries; the AI sees the real month. What needs a server (file storage, real multi-user sync) is marked, not stubbed.</p>
+      </div>
+    </section>
+
+    <section id="shell">
+      <h2><span class="num">01</span>The shell</h2>
+      <p>A single root (<code>OSRoot</code>) provides global state via React context and renders the chrome:</p>
+      <table>
+        <tbody>
+          <tr><td><strong>Top bar</strong></td><td>Brand · command-palette trigger (<code>⌘K</code>) · month switcher (+ new month) · AI · notifications · role &amp; language.</td></tr>
+          <tr><td><strong>App dock</strong></td><td>Vertical icon rail, role-filtered, grouped by category, with hover labels. Collapses to a bottom bar on mobile.</td></tr>
+          <tr><td><strong>Workspace tabs</strong></td><td>Open multiple modules at once; close tabs; a split-view button shows two modules side by side.</td></tr>
+          <tr><td><strong>Content router</strong></td><td>Renders the active module, gated by permission, with a denied state when the role lacks access.</td></tr>
+          <tr><td><strong>Overlays</strong></td><td>Command palette, AI drawer, notification center — all keyboard- and click-dismissable.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="services">
+      <h2><span class="num">02</span>Shared services</h2>
+      <p>One framework-free layer (<code>window.OS</code>) every module builds on. Swap any store for a backend later without touching UI.</p>
+      <table>
+        <thead><tr><th>Service</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Bus</td><td>Global event bus with a ring-buffer log — <code>record.updated</code>, <code>module.opened</code>, <code>automation.triggered</code>… Modules subscribe; the Activity timeline replays it.</td></tr>
+          <tr><td class="mono">Perms</td><td>Role-based access control. <code>can(role, action)</code> gates dock, launcher, modules and actions.</td></tr>
+          <tr><td class="mono">Notify</td><td>Notification store + center; fed by events, automations and publishes.</td></tr>
+          <tr><td class="mono">Audit</td><td>Append-only log: who did what, before/after, when. Powers the Audit module.</td></tr>
+          <tr><td class="mono">Memory</td><td>Operational timeline (edits, navigations, automation results) — “what happened today”.</td></tr>
+          <tr><td class="mono">Tasks · Notes · Automations · Chat</td><td>Persisted collections with CRUD, seeded with realistic data.</td></tr>
+          <tr><td class="mono">Settings · Favorites</td><td>Theme, language, enabled modules, pinned apps — all persisted.</td></tr>
+          <tr><td class="mono">AI</td><td>Bridge to a live model when available, with a computed local fallback so it always answers.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="modules">
+      <h2><span class="num">03</span>Module registry</h2>
+      <p>Every app is one entry in <code>REGISTRY</code> (id, icon, tint, category, permission, status, component, bilingual name/desc). The launcher, dock, command palette and settings all read from it — <strong>add a module by adding one row + one component</strong>.</p>
+      <div class="grid2">
+        <div class="mc"><div class="h">Schedule <span class="pill live">live</span></div><div class="d">Editable grid, Coverage, Warnings, Requests, Fairness.</div></div>
+        <div class="mc"><div class="h">Analytics <span class="pill live">live</span></div><div class="d">KPIs, coverage trend, night-load, CSV export.</div></div>
+        <div class="mc"><div class="h">Automation Studio <span class="pill live">live</span></div><div class="d">Rules that scan the data, run on demand, log results.</div></div>
+        <div class="mc"><div class="h">AI Assistant <span class="pill live">live</span></div><div class="d">Context-aware drawer + Gemini gem link.</div></div>
+        <div class="mc"><div class="h">Chat <span class="pill live">live</span></div><div class="d">Channels, ChatOps (<code>/coverage</code>), AI summary.</div></div>
+        <div class="mc"><div class="h">Tasks · Notes <span class="pill live">live</span></div><div class="d">Persisted CRUD operational tools.</div></div>
+        <div class="mc"><div class="h">Activity · Audit <span class="pill live">live</span></div><div class="d">Event timeline + tamper-evident action log.</div></div>
+        <div class="mc"><div class="h">Import/Export <span class="pill live">live</span></div><div class="d">Build a month from CSV/XLSX; export CSV.</div></div>
+        <div class="mc"><div class="h">Employee App <span class="pill live">live</span></div><div class="d">The mobile experience, hosted in-platform.</div></div>
+        <div class="mc"><div class="h">Members &amp; Roles, Settings <span class="pill live">live</span></div><div class="d">Editable roles, theme, language, modules.</div></div>
+        <div class="mc"><div class="h">Files, Form Builder <span class="pill soon">soon</span></div><div class="d">Need server storage — labelled, not stubbed.</div></div>
+      </div>
+    </section>
+
+    <section id="perms">
+      <h2><span class="num">04</span>Permissions</h2>
+      <p>Four roles — <strong>Owner, Manager, Employee, Viewer</strong> — switchable from the top bar. The matrix lives in <code>services.js</code>; the UI and logic both check it.</p>
+      <table>
+        <thead><tr><th>Capability</th><th>Owner</th><th>Manager</th><th>Employee</th></tr></thead>
+        <tbody>
+          <tr><td>Edit grid / publish</td><td>✓</td><td>✓</td><td>—</td></tr>
+          <tr><td>Approve requests</td><td>✓</td><td>✓</td><td>—</td></tr>
+          <tr><td>Automations / Audit</td><td>✓</td><td>✓</td><td>—</td></tr>
+          <tr><td>Members &amp; roles</td><td>✓</td><td>—</td><td>—</td></tr>
+          <tr><td>Tasks / Notes / Chat / AI</td><td>✓</td><td>✓</td><td>✓</td></tr>
+          <tr><td>View schedule / request leave</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="ai">
+      <h2><span class="num">05</span>AI layer</h2>
+      <p>The assistant assembles a context object — current month, role, open app, understaffed days, warning counts — and asks the live model; if none is reachable it answers from computed analytics, so it’s never dead. Every query is audited. ChatOps in the chat module (<code>/coverage</code>, <code>/warnings</code>) and the Gemini gem link round out the AI surface.</p>
+      <div class="flow">
+        <div class="frow"><span class="fnode acc">Question</span><span class="farr">→</span><span class="fnode">build context (month, role, derived)</span><span class="farr">→</span><span class="fnode grn">live model</span><span class="farr">→</span><span class="fnode">answer</span></div>
+        <div class="frow"><span class="fnode" style="margin-left:auto">fallback if offline</span><span class="farr">→</span><span class="fnode blu">computed answer from coverage/warnings/fairness</span></div>
+      </div>
+    </section>
+
+    <section id="files">
+      <h2><span class="num">06</span>File map</h2>
+      <div class="tree"><b>Program Shift OS.html</b>      entry — loads everything, boots OSRoot
+<b>os/</b>
+├─ services.js     Bus · Perms · Notify · Audit · Memory · stores · AI
+├─ os.css          shell styles + dark/light tokens
+├─ modules.jsx     Launcher, Schedule*, Analytics, Automations, Tasks, Notes
+├─ modules2.jsx    Chat, Audit, Activity, Members, Settings, Import/Export, Employee
+├─ shell.jsx       registry · AI drawer · notifications · command palette
+└─ root.jsx        OSRoot: provider + topbar + dock + tabs + router
+<b>app/</b>            reused from the prototype
+├─ data.js         real June data, months, import parser, compute
+├─ i18n.js · ui.jsx · styles.css
+├─ manager.jsx     GridView/CoverageView/… reused as modules
+├─ employee.jsx · owner.jsx · ios-frame.jsx</div>
+      <p class="sub">The OS reuses the prototype’s data and view components verbatim — the schedule modules are the same battle-tested views, now hosted in the platform shell.</p>
+    </section>
+
+    <section id="run">
+      <h2><span class="num">07</span>Run &amp; extend</h2>
+      <p><strong>Run:</strong> open <code>Program Shift OS.html</code> — no build, no install. Press <code>⌘K</code> for the command palette.</p>
+      <h3>Add a module in 2 steps</h3>
+      <p>1 · Write a component that calls <code>useOS()</code> for state. 2 · Add a row to <code>REGISTRY</code> in <code>shell.jsx</code> and register it in <code>COMP</code>. It appears in the launcher, dock, palette and settings automatically, gated by the permission you name.</p>
+    </section>
+
+    <section id="prod">
+      <h2><span class="num">08</span>Path to production</h2>
+      <p>This platform is the <strong>UI + product spec</strong>; the <code>vercel-app/</code> scaffold is the <strong>data spine</strong>. They meet cleanly:</p>
+      <table>
+        <thead><tr><th>Prototype service</th><th>Production replacement</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">OS.Tasks/Notes/Chat (localStorage)</td><td>Postgres / KV tables behind the same method signatures.</td></tr>
+          <tr><td class="mono">OS.Bus (in-memory)</td><td>Server events + SSE/WebSocket for realtime multi-user.</td></tr>
+          <tr><td class="mono">OS.Perms (static map)</td><td>Roles from the DB / Google Group, enforced in API routes too.</td></tr>
+          <tr><td class="mono">schedule state</td><td><code>/api/schedule</code> + <code>/api/cell</code> (already built) → Google Sheets.</td></tr>
+          <tr><td class="mono">OS.AI</td><td>Server-side model call with the same context object.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="limits">
+      <h2><span class="num">09</span>Honest limits</h2>
+      <ul class="sub">
+        <li>Single-user, single-browser: stores persist locally, not across devices (that’s the Vercel phase).</li>
+        <li>Files &amp; Form Builder are labelled <span class="pill soon">Coming soon</span> — they need server storage.</li>
+        <li>The AI uses a live model when the host exposes one, else a computed fallback; it isn’t a fine-tuned scheduler yet.</li>
+        <li>Offline/queue, rate-limiting and session handling are production concerns that live in the Next.js layer, not the prototype.</li>
+        <li>In-browser Babel prints one performance warning — expected for a no-build prototype; precompile for production.</li>
+      </ul>
+      <div class="callout">
+        <div class="tag">Next recommended</div>
+        <p>Auto-rota generation + “Fix this” on each warning (turn the validator into a scheduler), then port the platform onto the Vercel scaffold so the stores become real and multi-user.</p>
+      </div>
+    </section>
+
+    <footer>Program Shift OS · modular, role-aware, bilingual, themeable. Built on the existing schedule prototype + services layer. No monetization. Ask to add a module, wire auto-rota, or port to the Vercel backend.</footer>
+  </main>
+</div>
+</body>
+</html>

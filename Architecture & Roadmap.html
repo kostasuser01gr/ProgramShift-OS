@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Schedule — Architecture &amp; Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f3ec; --card:#fffdf8; --ink:#23201b; --soft:#6c655a; --faint:#9a9286;
+    --line:#e3ddd0; --line2:#d4ccbb;
+    --accent:#b5482b; --accent-soft:#f3e3dc;
+    --blue:#2f5d77; --blue-soft:#e1ebf0;
+    --green:#3f6b41; --green-soft:#e2ecdd;
+    --amber:#9a6b16; --amber-soft:#f6ecd6;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --serif:'Newsreader',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+       font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;display:grid;
+        grid-template-columns:240px 1fr;gap:56px}
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;
+        padding:48px 0 40px;border-right:1px solid var(--line)}
+  aside .brand{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+  aside .brand small{display:block;font-family:var(--sans);font-size:11px;font-weight:500;
+        letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+  nav{margin-top:30px;font-size:13.5px}
+  nav a{display:block;color:var(--soft);text-decoration:none;padding:5px 0 5px 14px;
+        border-left:2px solid transparent;margin-left:-2px;transition:.15s}
+  nav a:hover{color:var(--ink)}
+  nav a.sec{color:var(--ink);font-weight:600;margin-top:16px}
+  nav a .n{color:var(--faint);font-family:var(--mono);font-size:11px;margin-right:8px}
+  main{padding:64px 0 120px;min-width:0}
+  .kick{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+  h1{font-family:var(--serif);font-weight:500;font-size:46px;line-height:1.05;letter-spacing:-.02em;margin:0 0 18px}
+  .lede{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--soft);max-width:62ch;margin:0}
+  section{margin-bottom:56px;scroll-margin-top:30px}
+  h2{font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.015em;margin:0 0 8px;padding-top:14px}
+  h2 .num{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--accent);vertical-align:6px;margin-right:14px}
+  h3{font-size:15px;font-weight:600;letter-spacing:.01em;margin:28px 0 10px}
+  p{margin:0 0 14px;max-width:70ch}
+  .sub{color:var(--soft);max-width:70ch}
+  strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.85em;background:#efe9dd;color:#5a4434;padding:1px 6px;border-radius:4px;border:1px solid var(--line2)}
+
+  .callout{border:1px solid var(--line2);background:var(--card);border-radius:12px;padding:20px 24px;margin:22px 0}
+  .callout .tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  .callout.rec{border-left:4px solid var(--green);background:var(--green-soft)}
+  .callout.rec .tag{color:var(--green)}
+  .callout.warn{border-left:4px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .tag{color:var(--amber)}
+  .callout.blue{border-left:4px solid var(--blue);background:var(--blue-soft)}
+  .callout.blue .tag{color:var(--blue)}
+  .callout p:last-child{margin-bottom:0}
+
+  /* ---- architecture diagram ---- */
+  .diagram{border:1px solid var(--line2);background:var(--card);border-radius:14px;padding:26px;margin:24px 0}
+  .layer{display:grid;grid-template-columns:130px 1fr;gap:18px;align-items:center;padding:16px 0;border-top:1px dashed var(--line2)}
+  .layer:first-child{border-top:none}
+  .layer .lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+  .nodes{display:flex;gap:10px;flex-wrap:wrap}
+  .node{border:1px solid var(--line2);border-radius:9px;padding:9px 13px;background:var(--paper);
+        font-size:13px;font-weight:500;display:flex;flex-direction:column;gap:1px}
+  .node small{font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:400}
+  .node.acc{border-color:#e3c6bb;background:var(--accent-soft);color:var(--accent)}
+  .node.grn{border-color:#bcd3b6;background:var(--green-soft);color:var(--green)}
+  .node.blu{border-color:#bcd0db;background:var(--blue-soft);color:var(--blue)}
+  .flowdown{text-align:center;color:var(--faint);font-size:18px;line-height:1;padding:2px 0}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);padding:0 14px 8px;border-bottom:1.5px solid var(--line2)}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.mono{font-family:var(--mono);font-size:12.5px}
+  tr:last-child td{border-bottom:none}
+
+  pre{background:#26211b;color:#e9e1d2;border-radius:10px;padding:18px 20px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.7;margin:16px 0}
+  pre .c{color:#9a8f78}pre .k{color:#e0a07a}
+
+  /* phase roadmap */
+  .phase{display:grid;grid-template-columns:84px 1fr;gap:22px;padding:22px 0;border-top:1px solid var(--line)}
+  .phase:last-child{border-bottom:1px solid var(--line)}
+  .phase .ph{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+  .phase .ph b{display:block;font-family:var(--mono);font-size:26px;color:var(--ink);font-weight:500;margin-top:4px}
+  .phase h3{margin:0 0 6px}
+  .phase ul{margin:8px 0 0;padding-left:18px;color:var(--soft);font-size:14px}
+  .phase ul li{margin:3px 0}
+  .badge{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:2px}
+  .badge.now{background:var(--green-soft);color:var(--green);border:1px solid #bcd3b6}
+  .badge.next{background:var(--blue-soft);color:var(--blue);border:1px solid #bcd0db}
+  .badge.later{background:var(--accent-soft);color:var(--accent);border:1px solid #e3c6bb}
+
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+  .panel{border:1px solid var(--line);background:var(--card);border-radius:11px;padding:18px 20px}
+  .panel h3{margin:0 0 8px}
+  .panel p{font-size:13.5px;color:var(--soft);margin:0}
+
+  hr.soft{border:none;border-top:1px solid var(--line);margin:40px 0}
+  footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:22px}
+
+  @media print{.wrap{display:block;max-width:none;padding:0}aside{display:none}main{padding:0}section{page-break-inside:avoid}body{background:#fff;font-size:11pt}pre{background:#f2efe8;color:#23201b;border:1px solid #ccc}}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;gap:0;padding:0 22px}aside{display:none}.cols2,.diagram .layer{grid-template-columns:1fr}.layer{grid-template-columns:1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="brand">Shift Schedule<small>Architecture &amp; Roadmap</small></div>
+    <nav>
+      <a class="sec" href="#tldr"><span class="n">00</span>The short answer</a>
+      <a href="#arch"><span class="n">01</span>Target architecture</a>
+      <a href="#sync"><span class="n">02</span>How sync works</a>
+      <a href="#auth"><span class="n">03</span>Auth &amp; roles</a>
+      <a href="#scale"><span class="n">04</span>Scaling &amp; the DB question</a>
+      <a href="#access"><span class="n">05</span>Accessibility</a>
+      <a href="#stack"><span class="n">06</span>Concrete stack</a>
+      <a class="sec" href="#roadmap"><span class="n">07</span>Phased roadmap</a>
+      <a href="#cost"><span class="n">08</span>Cost &amp; ops</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header style="margin-bottom:52px">
+      <div class="kick">Vercel · Google Workspace · Scale</div>
+      <h1>From a guarded spreadsheet<br>to an app everyone can use</h1>
+      <p class="lede">You don't have to abandon the Sheet to get a real web/mobile app. The cleanest path keeps Google as the system of record and puts a Vercel front-end on top — then migrates the data layer only when scale actually demands it. Here's how everything connects, and the order to build it.</p>
+    </header>
+
+    <!-- 00 TLDR -->
+    <section id="tldr">
+      <h2><span class="num">00</span>The short answer</h2>
+      <div class="callout rec">
+        <div class="tag">Recommended shape</div>
+        <p>Build a <strong>Next.js app on Vercel</strong>. Its serverless API routes talk to the <strong>Google Sheets &amp; Drive APIs</strong> through a <strong>service account</strong>. Writes from staff go <em>app → Sheets</em>; the <strong>Apps Script you already have</strong> stays as the validation/automation engine and <strong>pushes changes back to the app</strong> via a webhook. Sign-in is Google. When you outgrow Sheets, swap the data layer for <strong>Postgres</strong> behind the same API — the front-end never notices.</p>
+      </div>
+      <p class="sub">Why this and not "rebuild everything in a database now": the Sheet is your team's mental model, your audit trail, and your fallback. Keeping it as the source of truth in phase 1 means the app is <strong>additive</strong> — if Vercel is down, the Sheet still works. You earn the right to a database by hitting real limits (concurrency, rows, query complexity), not by guessing.</p>
+    </section>
+
+    <!-- 01 ARCH -->
+    <section id="arch">
+      <h2><span class="num">01</span>Target architecture</h2>
+      <div class="diagram">
+        <div class="layer">
+          <div class="lbl">People</div>
+          <div class="nodes">
+            <div class="node acc">Employees<small>mobile PWA · view + requests</small></div>
+            <div class="node acc">Managers<small>web dashboard · edit</small></div>
+            <div class="node acc">Owner<small>full control</small></div>
+          </div>
+        </div>
+        <div class="flowdown">↕ HTTPS · Google sign-in</div>
+        <div class="layer">
+          <div class="lbl">Vercel</div>
+          <div class="nodes">
+            <div class="node">Next.js UI<small>App Router · React · i18n (EL)</small></div>
+            <div class="node">API routes<small>/api/* · serverless</small></div>
+            <div class="node">Auth<small>NextAuth · Google OAuth</small></div>
+            <div class="node">Cache / queue<small>Vercel KV (Redis)</small></div>
+          </div>
+        </div>
+        <div class="flowdown">↕ Google APIs (service account)</div>
+        <div class="layer">
+          <div class="lbl">Google</div>
+          <div class="nodes">
+            <div class="node grn">Sheets API<small>read/write the grid</small></div>
+            <div class="node grn">Drive API<small>backups · PDF</small></div>
+            <div class="node grn">Apps Script<small>validation · onEdit webhook</small></div>
+          </div>
+        </div>
+        <div class="flowdown">↕ (phase 3, optional)</div>
+        <div class="layer">
+          <div class="lbl">Data (later)</div>
+          <div class="nodes">
+            <div class="node blu">Postgres<small>Supabase / Neon</small></div>
+            <div class="node blu">Sheets = export<small>one-way mirror</small></div>
+          </div>
+        </div>
+      </div>
+      <p class="sub">Three planes: <strong>people</strong> (role-specific UIs), <strong>Vercel</strong> (the app + thin API + auth + cache), and <strong>Google</strong> (data + the automation you already own). The dashed bottom layer is the future database — wired behind the same API so the migration is invisible upstream.</p>
+    </section>
+
+    <!-- 02 SYNC -->
+    <section id="sync">
+      <h2><span class="num">02</span>How "everything syncs" — concretely</h2>
+      <p>Two directions, two mechanisms. Keep them separate and the system stays predictable.</p>
+      <table>
+        <thead><tr><th>Direction</th><th>Mechanism</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>App → Sheets</strong><br>(staff edits a shift in the app)</td><td>API route writes the cell with the Sheets API service account, then lets your existing Apps Script validation run.</td><td>Debounce + write in batches. Optimistic UI: show the change instantly, reconcile on response.</td></tr>
+          <tr><td><strong>Sheets → App</strong><br>(someone edits the Sheet directly)</td><td>Apps Script <code>onEdit</code> / installable trigger <code>POST</code>s the change to <code>/api/webhook/sheets</code> with a shared secret.</td><td>App updates its cache and pushes to open clients (poll every ~30s, or websockets/SSE later).</td></tr>
+          <tr><td><strong>Read path</strong></td><td>API reads from <strong>Vercel KV cache</strong>, refreshed on webhook or TTL (e.g. 60s).</td><td>Sheets API has quotas — never read it on every page load.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout blue">
+        <div class="tag">The cache is not optional</div>
+        <p>Google Sheets API allows roughly <strong>60 reads/min per user</strong>. With many employees opening the app, you'll blow past that instantly if each request hits Sheets. Put <strong>Vercel KV</strong> (Redis) in front: serve reads from cache, invalidate it on the webhook. This single decision is what makes the Sheets-as-backend approach scale to a whole team.</p>
+      </div>
+      <h3>The webhook, in one snippet</h3>
+      <pre><span class="c">// Apps Script — add to your installable onEdit, after the CODED mirror</span>
+<span class="k">function</span> notifyApp_(range, oldV, newV) {
+  <span class="k">try</span> {
+    UrlFetchApp.fetch(<span class="c">SCRIPT_PROPS.APP_WEBHOOK_URL</span>, {
+      method: <span class="c">'post'</span>, contentType: <span class="c">'application/json'</span>,
+      headers: { <span class="c">'X-Secret'</span>: SCRIPT_PROPS.SHARED_SECRET },
+      payload: JSON.stringify({ a1: range.getA1Notation(), oldV, newV }),
+      muteHttpExceptions: <span class="k">true</span>
+    });
+  } <span class="k">catch</span> (e) { Logger.log(e); }   <span class="c">// never block the edit</span>
+}</pre>
+    </section>
+
+    <!-- 03 AUTH -->
+    <section id="auth">
+      <h2><span class="num">03</span>Auth &amp; the three roles</h2>
+      <p>Use <strong>Google sign-in</strong> (NextAuth) so nobody manages another password. Map each signed-in email to a role; gate both UI and API by it.</p>
+      <table>
+        <thead><tr><th>Role</th><th>Sees</th><th>Can do</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Employee</strong></td><td>Their own month, the current-week team view, their stats.</td><td>Read; submit <em>requests</em> (swap, leave) — never write the grid directly.</td></tr>
+          <tr><td><strong>Manager</strong></td><td>Everything + the warnings &amp; coverage dashboards.</td><td>Edit shifts, approve requests, run validation, export.</td></tr>
+          <tr><td><strong>Owner</strong></td><td>All of the above + settings.</td><td>Manage members, thresholds, sharing, new-month roll.</td></tr>
+        </tbody>
+      </table>
+      <p class="sub">This finally separates the two things the spreadsheet couldn't: employees get genuine <strong>self-service visibility</strong> without any risk to the grid, because their writes are <em>requests</em> a manager approves — not cell edits.</p>
+    </section>
+
+    <!-- 04 SCALE -->
+    <section id="scale">
+      <h2><span class="num">04</span>Scaling — and when to leave Sheets</h2>
+      <p>Sheets-as-backend is genuinely fine for one team for a long time. Move to a database when you cross one of these lines, not before:</p>
+      <table>
+        <thead><tr><th>Signal you've outgrown Sheets</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Multiple teams / locations / many months at once</td><td>You want relational queries ("all nights for nurse X across Q2") Sheets can't do well.</td></tr>
+          <tr><td>Concurrent editors fighting over cells</td><td>You need row-level writes + transactions, not a single grid.</td></tr>
+          <tr><td>&gt; ~10k–50k rows, or slow reads even with cache</td><td>Sheets API latency and the 10M-cell ceiling start to bite.</td></tr>
+          <tr><td>Real reporting / history / analytics</td><td>You want SQL, not <code>COUNTIF</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout rec">
+        <div class="tag">The migration is painless if you plan for it</div>
+        <p>Because every read/write already goes through <strong>your API layer</strong>, switching from a <code>SheetsRepository</code> to a <code>PostgresRepository</code> (Supabase or Neon — both have free tiers and great Vercel integration) is a back-end swap. Keep writing a <strong>one-way export back to Sheets</strong> so managers keep their familiar view and audit trail. The front-end code doesn't change at all.</p>
+      </div>
+    </section>
+
+    <!-- 05 ACCESS -->
+    <section id="access">
+      <h2><span class="num">05</span>"Accessible for everyone" — what that actually requires</h2>
+      <div class="cols2">
+        <div class="panel"><h3>Mobile-first PWA</h3><p>Most staff will check shifts on a phone. Ship an installable PWA: home-screen icon, offline cache of <em>their</em> schedule, fast cold start.</p></div>
+        <div class="panel"><h3>Greek, properly</h3><p>Full <code>el</code> localisation (next-intl), Greek date/number formats, and the existing shift tokens as first-class labels.</p></div>
+        <div class="panel"><h3>WCAG 2.1 AA</h3><p>Keyboard nav, focus states, semantic colour (the shift colours need text/icon backup for colour-blind users), 44px hit targets, screen-reader labels.</p></div>
+        <div class="panel"><h3>Low-friction entry</h3><p>One-tap Google sign-in, magic-link fallback, no app-store install. Notifications (web push / email) for published schedules &amp; approved requests.</p></div>
+      </div>
+      <p class="sub">Accessibility here is half <em>a11y</em> (the WCAG sense) and half <em>reach</em> (works on any phone, no install, in their language). Plan for both from the first screen.</p>
+    </section>
+
+    <!-- 06 STACK -->
+    <section id="stack">
+      <h2><span class="num">06</span>Concrete stack</h2>
+      <table>
+        <thead><tr><th>Concern</th><th>Pick</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Framework</td><td>Next.js (App Router) on Vercel</td><td>SSR + serverless API in one repo; first-class Vercel deploy.</td></tr>
+          <tr><td class="mono">Auth</td><td>NextAuth + Google</td><td>No passwords; matches your Workspace identity.</td></tr>
+          <tr><td class="mono">Google access</td><td>Service account + <code>googleapis</code></td><td>Server-side Sheets/Drive without per-user OAuth scopes.</td></tr>
+          <tr><td class="mono">Cache / queue</td><td>Vercel KV (Upstash Redis)</td><td>Absorbs read load; rate-limits writes.</td></tr>
+          <tr><td class="mono">Data (phase 3)</td><td>Supabase or Neon Postgres</td><td>Free tier, Vercel integration, instant SQL.</td></tr>
+          <tr><td class="mono">Automation</td><td>Your existing Apps Script</td><td>Already does validation, backup, PDF, history — reuse it.</td></tr>
+          <tr><td class="mono">UI</td><td>React + Tailwind, PWA</td><td>Fast to build the mobile + desktop views from one design system.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <div class="tag">Two things to get right early</div>
+        <p><strong>Secrets:</strong> the service-account JSON and webhook secret live in Vercel env vars (and Apps Script <em>Script Properties</em>) — never in the repo. <strong>Quotas:</strong> design every read to come from cache; batch every write. Get these two right and the rest is ordinary app work.</p>
+      </div>
+    </section>
+
+    <hr class="soft">
+
+    <!-- 07 ROADMAP -->
+    <section id="roadmap">
+      <h2><span class="num">07</span>Phased roadmap</h2>
+
+      <div class="phase">
+        <div class="ph">Done<b>0</b></div>
+        <div>
+          <h3>Hardened spreadsheet <span class="badge now">shipped</span></h3>
+          <p class="sub">The Apps Script you have: validation, colours, conflict validator, dashboards, history, backups, PDF, protections — plus the new CODED sync, fairness report, and one-click new-month.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="ph">Next<b>1</b></div>
+        <div>
+          <h3>Read-only app on Vercel <span class="badge next">2–3 wks</span></h3>
+          <ul>
+            <li>Next.js app, Google sign-in, role mapping.</li>
+            <li>Service account reads the Sheet → Vercel KV cache.</li>
+            <li>Employee mobile view (my month) + manager dashboards (coverage, warnings, stats).</li>
+            <li>Apps Script <code>onEdit</code> → webhook keeps the app fresh.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="ph">Next<b>2</b></div>
+        <div>
+          <h3>Two-way writes &amp; requests <span class="badge next">3–4 wks</span></h3>
+          <ul>
+            <li>Managers edit shifts in-app (writes back to Sheets, validation still enforced).</li>
+            <li>Employees submit swap / leave <em>requests</em>; managers approve in one tap.</li>
+            <li>Web-push / email notifications on publish &amp; approval.</li>
+            <li>PWA install, full Greek i18n, WCAG pass.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="ph">Later<b>3</b></div>
+        <div>
+          <h3>Scale-out (only if needed) <span class="badge later">when limits hit</span></h3>
+          <ul>
+            <li>Swap the data layer to Postgres behind the same API.</li>
+            <li>Multi-team / multi-month, real reporting &amp; analytics.</li>
+            <li>Sheets becomes a one-way export for the familiar view + audit.</li>
+            <li>Optional: auto-scheduling suggestions from the fairness data.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 COST -->
+    <section id="cost">
+      <h2><span class="num">08</span>Cost &amp; ops, honestly</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Phase 1–2</th></tr></thead>
+        <tbody>
+          <tr><td>Vercel</td><td>Hobby/free covers a single team; Pro (~$20/mo) when you want custom domains + more compute.</td></tr>
+          <tr><td>Google APIs</td><td>Free within quota — the cache keeps you well inside it.</td></tr>
+          <tr><td>Vercel KV</td><td>Free tier is plenty for one team.</td></tr>
+          <tr><td>Postgres (phase 3)</td><td>Supabase/Neon free tier, then ~$10–25/mo.</td></tr>
+          <tr><td>Maintenance</td><td>The Apps Script keeps running regardless — the app is additive, so an app outage never blocks scheduling.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Principle to hold onto: <strong>the app is additive</strong> until phase 3. Google stays the source of truth, your Apps Script stays the engine, and every read/write goes through one API layer — so growing into a database later is a swap, not a rewrite. Tell me the user/role split you want and I'll prototype the actual screens next.
+    </footer>
+  </main>
+</div>
+</body>
+</html>

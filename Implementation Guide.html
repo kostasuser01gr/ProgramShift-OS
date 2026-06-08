@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Schedule — Implementation Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f3ec; --card:#fffdf8; --ink:#23201b; --soft:#6c655a; --faint:#9a9286;
+    --line:#e3ddd0; --line2:#d4ccbb;
+    --accent:#b5482b;        /* terracotta */
+    --accent-soft:#f3e3dc;
+    --blue:#2f5d77; --blue-soft:#e1ebf0;
+    --green:#3f6b41; --green-soft:#e2ecdd;
+    --amber:#9a6b16; --amber-soft:#f6ecd6;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --serif:'Newsreader',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+       font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;display:grid;
+        grid-template-columns:240px 1fr;gap:56px}
+  /* ---- sidebar TOC ---- */
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;
+        padding:48px 0 40px;border-right:1px solid var(--line)}
+  aside .brand{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.2;
+        letter-spacing:-.01em;margin-bottom:4px}
+  aside .brand small{display:block;font-family:var(--sans);font-size:11px;font-weight:500;
+        letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+  nav{margin-top:30px;font-size:13.5px}
+  nav a{display:block;color:var(--soft);text-decoration:none;padding:5px 0;
+        border-left:2px solid transparent;padding-left:14px;margin-left:-2px;transition:.15s}
+  nav a:hover{color:var(--ink)}
+  nav a.sec{color:var(--ink);font-weight:600;margin-top:16px}
+  nav a .n{color:var(--faint);font-family:var(--mono);font-size:11px;margin-right:8px}
+
+  main{padding:64px 0 120px;min-width:0}
+
+  header.hero{margin-bottom:52px}
+  .kick{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+        color:var(--accent);margin-bottom:18px}
+  h1{font-family:var(--serif);font-weight:500;font-size:46px;line-height:1.05;
+     letter-spacing:-.02em;margin:0 0 18px}
+  .lede{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--soft);
+        max-width:60ch;margin:0}
+  .meta{display:flex;gap:28px;flex-wrap:wrap;margin-top:28px;padding-top:22px;
+        border-top:1px solid var(--line);font-size:13px;color:var(--soft)}
+  .meta b{display:block;color:var(--ink);font-family:var(--mono);font-size:12px;
+        font-weight:500;margin-top:3px;letter-spacing:-.01em}
+
+  section{margin-bottom:54px;scroll-margin-top:30px}
+  h2{font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.015em;
+     margin:0 0 8px;padding-top:14px}
+  h2 .num{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--accent);
+     vertical-align:6px;margin-right:14px}
+  h3{font-size:15px;font-weight:600;letter-spacing:.01em;margin:30px 0 10px}
+  p{margin:0 0 14px;max-width:68ch}
+  .sub{color:var(--soft);max-width:68ch}
+  strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:#efe9dd;color:#5a4434;
+       padding:1px 6px;border-radius:4px;border:1px solid var(--line2)}
+  a.inline{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+
+  /* callouts */
+  .callout{border:1px solid var(--line2);background:var(--card);border-radius:12px;
+        padding:20px 24px;margin:22px 0;position:relative}
+  .callout .tag{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+        margin-bottom:8px}
+  .callout.find{border-left:4px solid var(--accent)}
+  .callout.find .tag{color:var(--accent)}
+  .callout.assume{border-left:4px solid var(--blue)}
+  .callout.assume .tag{color:var(--blue)}
+  .callout.warn{border-left:4px solid var(--amber);background:var(--amber-soft)}
+  .callout.warn .tag{color:var(--amber)}
+  .callout p:last-child{margin-bottom:0}
+
+  /* fast-path steps */
+  ol.steps{list-style:none;counter-reset:s;margin:24px 0;padding:0}
+  ol.steps>li{counter-increment:s;position:relative;padding:18px 0 18px 64px;
+        border-top:1px solid var(--line)}
+  ol.steps>li:last-child{border-bottom:1px solid var(--line)}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:16px;
+        width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--paper);
+        font-family:var(--serif);font-size:19px;display:grid;place-items:center}
+  ol.steps h3{margin:2px 0 4px}
+  ol.steps p{margin:0;color:var(--soft);font-size:14.5px}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+     color:var(--soft);padding:0 14px 8px;border-bottom:1.5px solid var(--line2)}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.mono,th.mono{font-family:var(--mono);font-size:12.5px}
+  tr:last-child td{border-bottom:none}
+  .swatch{display:inline-block;width:15px;height:15px;border-radius:4px;
+     border:1px solid rgba(0,0,0,.18);vertical-align:-2px;margin-right:8px}
+
+  /* code block */
+  pre{background:#26211b;color:#e9e1d2;border-radius:10px;padding:18px 20px;overflow:auto;
+      font-family:var(--mono);font-size:12.5px;line-height:1.7;margin:16px 0}
+  pre .c{color:#9a8f78}
+  pre .k{color:#e0a07a}
+
+  /* menu map / pill grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+  .menucard{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:14px 16px}
+  .menucard .m{font-weight:600;font-size:14px;margin-bottom:3px}
+  .menucard .d{font-size:13px;color:var(--soft)}
+
+  /* checklist */
+  ul.check{list-style:none;margin:16px 0;padding:0}
+  ul.check li{position:relative;padding:9px 0 9px 34px;border-bottom:1px solid var(--line);
+     font-size:14.5px}
+  ul.check li::before{content:"";position:absolute;left:2px;top:11px;width:17px;height:17px;
+     border:1.5px solid var(--line2);border-radius:5px;background:var(--card)}
+  ul.check li b{font-weight:600}
+  ul.check li .exp{display:block;color:var(--soft);font-size:13px;margin-top:1px}
+
+  .tokens{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+  .tok{font-family:var(--mono);font-size:12px;background:var(--card);border:1px solid var(--line2);
+     border-radius:6px;padding:4px 9px;color:#5a4434}
+  .tok.t{background:var(--accent-soft);border-color:#e3c6bb;color:var(--accent)}
+
+  hr.soft{border:none;border-top:1px solid var(--line);margin:40px 0}
+
+  footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:22px}
+
+  @media print{
+    .wrap{display:block;max-width:none;padding:0}
+    aside{display:none}
+    main{padding:0}
+    section{page-break-inside:avoid}
+    body{background:#fff;font-size:11pt}
+    pre{background:#f2efe8;color:#23201b;border:1px solid #ccc}
+    pre .c{color:#888}pre .k{color:#a8522e}
+  }
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr;gap:0;padding:0 22px}
+    aside{display:none}
+    .grid2{grid-template-columns:1fr}
+    h1{font-size:34px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside>
+    <div class="brand">Shift Schedule<small>Implementation Guide</small></div>
+    <nav>
+      <a class="sec" href="#findings"><span class="n">00</span>Findings &amp; assumption</a>
+      <a href="#tabs"><span class="n">01</span>The tabs</a>
+      <a href="#step0"><span class="n">02</span>Step 0 — convert</a>
+      <a href="#install"><span class="n">03</span>Install &amp; one-click</a>
+      <a href="#sharing"><span class="n">04</span>Guided sharing</a>
+      <a href="#how"><span class="n">05</span>How each part works</a>
+      <a href="#testing"><span class="n">06</span>Testing checklist</a>
+      <a href="#maintenance"><span class="n">07</span>Maintenance</a>
+      <a href="#trouble"><span class="n">08</span>Troubleshooting</a>
+      <a class="sec" href="#appendix"><span class="n">A</span>Manual appendix</a>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <header class="hero">
+      <div class="kick">Google Sheets · Apps Script · Greek UI</div>
+      <h1>Upgrading the monthly<br>staff shift schedule</h1>
+      <p class="lede">One bound script turns a plain grid into a guarded, self-checking schedule: a reject-invalid dropdown, colour coding, a conflict validator, coverage and per-person dashboards, an edit log, daily backups and PDF export — all driven from one Greek menu.</p>
+      <div class="meta">
+        <div>File<b>ΙΟΥΝΙΟΣ 2026 ΣΟΦΙΑ</b></div>
+        <div>Scope<b>June 2026 · 30 day-columns</b></div>
+        <div>Staff<b>≈29 employees</b></div>
+        <div>You run<b>Code.gs + this guide</b></div>
+      </div>
+    </header>
+
+    <!-- 00 FINDINGS -->
+    <section id="findings">
+      <h2><span class="num">00</span>Two findings &amp; one assumption</h2>
+      <p class="sub">I can't modify your live sheet — I deliver code you paste and run. Before you do, three things you should know, stated plainly.</p>
+
+      <div class="callout find">
+        <div class="tag">Finding 1 — file format is fine</div>
+        <p>Your file is already a <strong>native Google Sheet</strong> (the URL is a <code>/spreadsheets/d/…</code> link with real tabs <code>CODED · CHECK · ΩΡΑΡΙΑ</code>). That means Apps Script, the custom menu, edit history, backups and PDF export will all run. <strong>Step 0 conversion is not needed</strong> for this file — it's only listed below as a safety net in case you ever work from an uploaded <code>.xlsx</code>.</p>
+      </div>
+
+      <div class="callout find">
+        <div class="tag">Finding 2 — the real shift set is ~40 values, and I have it</div>
+        <p>I read your live <strong>code↔shift mapping table</strong> (columns <code>AJ:AK</code>). The schedule does <strong>not</strong> use a short list — it uses about <strong>40 distinct values</strong>: on-the-hour and half-hour ranges, a six-day family ending mostly <code>:40</code> (with one outlier, <code>16:30-23:10</code>, ending <code>:10</code>), two nights, plus <code>ΡΕΠΟ</code> and the four leave tokens. The script seeds <strong>this exact set</strong> into a hidden sheet bound to the named range <code>SHIFTS</code>, so validation is correct on the very first run.</p>
+        <p style="margin-top:10px">One quirk worth knowing: in the legacy table the codes <code>208</code> and <code>235</code> are each mapped to <em>both</em> a time range <em>and</em> a leave token. That's why the script treats the <strong>human-readable column as canonical</strong> — not the codes.</p>
+      </div>
+
+      <div class="callout assume">
+        <div class="tag">Assumption — people type into ΩΡΑΡΙΑ</div>
+        <p>Everything points at <code>ΩΡΑΡΙΑ</code> (human-readable text shifts) as the input sheet, as briefed. In your live file <code>CODED</code> is <em>also</em> fully populated with numeric codes — so if your team actually types <strong>codes</strong>, I can repoint validation, colours, history and dashboards at <code>CODED</code> in one config change (<code>USE_CODES = true</code>). Say the word.</p>
+      </div>
+    </section>
+
+    <!-- 01 TABS -->
+    <section id="tabs">
+      <h2><span class="num">01</span>The tabs you already have — and the ones the script adds</h2>
+      <table>
+        <thead><tr><th>Tab</th><th>Role</th><th>Who edits</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">ΩΡΑΡΙΑ</td><td>Human-readable schedule — <strong>the input sheet</strong>. Cells hold <code>07:00-15:00</code>, <code>ΡΕΠΟ</code>, <code>ΑΔΕΙΑ 5ΗΜΕΡΟΥ</code>…</td><td>Editors (grid only)</td></tr>
+          <tr><td class="mono">CODED</td><td>Numeric mirror (<code>210/301/208/402/R…</code>). Derived, not hand-edited.</td><td>Owner only</td></tr>
+          <tr><td class="mono">CHECK</td><td>Legacy check grid — may hold formulas. <strong>Left completely untouched.</strong></td><td>Untouched</td></tr>
+          <tr><td class="mono" colspan="3" style="background:var(--accent-soft);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Added by the script</td></tr>
+          <tr><td class="mono">ΛΙΣΤΑ_ΒΑΡΔΙΩΝ</td><td>Hidden helper holding the 40 valid values; the named range <code>SHIFTS</code> points here.</td><td>Owner (hidden)</td></tr>
+          <tr><td class="mono">ΣΥΝΟΨΗ</td><td>Coverage dashboard — one column per date, counts per shift + aggregates + a staffing indicator.</td><td>Owner only</td></tr>
+          <tr><td class="mono">ΚΑΡΤΕΛΑ ΥΠΑΛΛΗΛΟΥ</td><td>Pick an ΑΜΕ from a dropdown → that person's whole month.</td><td>Locked except dropdown</td></tr>
+          <tr><td class="mono">ΤΡΕΧΟΥΣΑ ΕΒΔΟΜΑΔΑ</td><td>Whole team, 7 days from <code>TODAY()</code>.</td><td>Owner only</td></tr>
+          <tr><td class="mono">ΠΡΟΕΙΔΟΠΟΙΗΣΕΙΣ</td><td>Validator output — Greek warnings, one row each, newest run timestamped on top.</td><td>Owner only</td></tr>
+          <tr><td class="mono">ΙΣΤΟΡΙΚΟ</td><td>Edit log of every change inside the grid.</td><td>Owner only</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 02 STEP 0 -->
+    <section id="step0">
+      <h2><span class="num">02</span>Step 0 — convert to Google Sheets (safety net only)</h2>
+      <p class="sub">Your file is already native, so you can normally skip this. Do it only if a copy ever opens showing an <strong>Excel</strong> badge / <code>.xlsx</code> name — Apps Script, menus, history, backups and PDF do not run on an uploaded Excel file.</p>
+      <div class="callout warn">
+        <div class="tag">If and only if it's an .xlsx</div>
+        <p>Open it from Drive → <strong>File → Save as Google Sheets</strong>. Work in the new converted copy from then on, and build everything there. The original <code>.xlsx</code> can be archived.</p>
+      </div>
+    </section>
+
+    <!-- 03 INSTALL -->
+    <section id="install">
+      <h2><span class="num">03</span>Install the script, then run one click</h2>
+      <ol class="steps">
+        <li>
+          <h3>Open the script editor</h3>
+          <p>In the sheet: <strong>Extensions → Apps Script</strong>. A new bound project opens.</p>
+        </li>
+        <li>
+          <h3>Paste <code>Code.gs</code></h3>
+          <p>Delete the empty starter, paste the entire <code>Code.gs</code> I delivered, and <strong>Save</strong> (disk icon). Reload the spreadsheet tab once.</p>
+        </li>
+        <li>
+          <h3>Find the new menu</h3>
+          <p>A Greek menu <strong>«Εργαλεία Προγράμματος»</strong> appears next to <em>Help</em>.</p>
+        </li>
+        <li>
+          <h3>Run «🚀 Πλήρης Εγκατάσταση»</h3>
+          <p>The first run asks you to <strong>authorise</strong> (it's your own script — Review permissions → Allow). It builds the list, dropdown, colours, all dashboards, the log, installs triggers and applies protections, then shows a per-step success summary.</p>
+        </li>
+        <li>
+          <h3>Run «🔗 Οδηγός Κοινής Χρήσης»</h3>
+          <p>Sets the link to <em>Viewer</em> and prompts for your 2–3 editor emails. Then test (section 06).</p>
+        </li>
+      </ol>
+      <div class="callout">
+        <div class="tag" style="color:var(--green)">Why one-click is safe</div>
+        <p><code>setupEverything()</code> runs each step inside its own <code>try/catch</code>, so a single failure can't abort the rest — you get a summary of what succeeded and what to retry. Every setup function is <strong>idempotent</strong>: re-running never duplicates rules, protections or triggers.</p>
+      </div>
+
+      <h3>The full menu, mapped</h3>
+      <div class="grid2">
+        <div class="menucard"><div class="m">🚀 Πλήρης Εγκατάσταση</div><div class="d">Builds everything, one click.</div></div>
+        <div class="menucard"><div class="m">🔗 Οδηγός Κοινής Χρήσης</div><div class="d">Link → Viewer; prompts for editors.</div></div>
+        <div class="menucard"><div class="m">✅ Έλεγχος Προγράμματος</div><div class="d">Runs the validator, opens warnings.</div></div>
+        <div class="menucard"><div class="m">⚠️ Άνοιγμα Προειδοποιήσεων</div><div class="d">Jumps to ΠΡΟΕΙΔΟΠΟΙΗΣΕΙΣ.</div></div>
+        <div class="menucard"><div class="m">📊 Σύνοψη Κάλυψης</div><div class="d">Jumps to ΣΥΝΟΨΗ.</div></div>
+        <div class="menucard"><div class="m">👤 Καρτέλα Υπαλλήλου</div><div class="d">Jumps to the per-person card.</div></div>
+        <div class="menucard"><div class="m">📅 Τρέχουσα Εβδομάδα</div><div class="d">Jumps to the 7-day team view.</div></div>
+        <div class="menucard"><div class="m">🖨️ Εξαγωγή σε PDF</div><div class="d">Landscape PDF → Drive, shows link.</div></div>
+        <div class="menucard"><div class="m">💾 Αντίγραφο Τώρα</div><div class="d">Manual backup on demand.</div></div>
+        <div class="menucard"><div class="m">Για προχωρημένους ▸</div><div class="d">Each setup piece on its own, + remove-protections.</div></div>
+      </div>
+    </section>
+
+    <!-- 04 SHARING -->
+    <section id="sharing">
+      <h2><span class="num">04</span>Guided sharing &amp; protections</h2>
+      <p>Permissions are split into two layers — <strong>document access</strong> (who can open / edit the file at all) and <strong>protected ranges</strong> (what an editor can touch once inside).</p>
+      <table>
+        <thead><tr><th>Layer</th><th>Setting</th></tr></thead>
+        <tbody>
+          <tr><td>Owner</td><td>You — full control. The script always runs as you, so it can still write to owner-only sheets.</td></tr>
+          <tr><td>Named editors (2–3)</td><td>Can fill shifts. <strong>«Οδηγός Κοινής Χρήσης»</strong> collects their emails and adds them.</td></tr>
+          <tr><td>Everyone else</td><td>View-only via link.</td></tr>
+          <tr><td>ΩΡΑΡΙΑ protection</td><td>Whole sheet protected <strong>except the grid <code>D2:AG200</code></strong> — editors fill shifts but can't touch names, dates or the code table.</td></tr>
+          <tr><td>Other sheets</td><td><code>CODED</code>, helpers, dashboards, log, list = <strong>owner-only</strong>. <code>CHECK</code> untouched.</td></tr>
+          <tr><td>Employee card</td><td>Locked except its single dropdown cell <code>B1</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <div class="tag">Optional, needs one toggle</div>
+        <p>Stopping editors from <em>re-sharing</em> the file uses the Advanced <strong>Drive</strong> service. If you want it: in Apps Script → <em>Services ➕ → Drive API → Add</em>, then re-run sharing. If you skip it, everything else still works — that one line is wrapped in <code>try/catch</code>.</p>
+      </div>
+    </section>
+
+    <!-- 05 HOW IT WORKS -->
+    <section id="how">
+      <h2><span class="num">05</span>How each part works</h2>
+
+      <h3>Validation — reject invalid</h3>
+      <p>The grid <code>D2:AG200</code> gets a dropdown sourced from <code>SHIFTS</code> with <code>setAllowInvalid(false)</code>: anything not in the 40-value set is refused, with Greek help text. Because the source is a named range, you maintain the valid set in one place.</p>
+
+      <h3>Colour coding — 7 rules, first match wins</h3>
+      <p>Custom-formula conditional formatting on the grid, in this exact priority order. Re-applying keeps any pre-existing rules that don't target the grid and replaces only ours.</p>
+      <table>
+        <thead><tr><th>#</th><th>Meaning</th><th class="mono">Formula (relative D2)</th><th>BG</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Invalid / unknown</td><td class="mono">=AND(D2&lt;&gt;"",COUNTIF(SHIFTS,D2)=0)</td><td><span class="swatch" style="background:#CC0000"></span>white, bold</td></tr>
+          <tr><td>2</td><td>ΡΕΠΟ</td><td class="mono">=D2="ΡΕΠΟ"</td><td><span class="swatch" style="background:#EFEFEF"></span>#EFEFEF</td></tr>
+          <tr><td>3</td><td>Leave / sick</td><td class="mono">=OR(REGEXMATCH(…"ΑΔΕΙΑ"),REGEXMATCH(…"ΑΝΑΡΡΩΤΙΚΗ"))</td><td><span class="swatch" style="background:#F4CCCC"></span>#F4CCCC</td></tr>
+          <tr><td>4</td><td>Night (22:/23:)</td><td class="mono">=REGEXMATCH(D2&amp;"","^(22|23):")</td><td><span class="swatch" style="background:#B4A7D6"></span>#B4A7D6</td></tr>
+          <tr><td>5</td><td>Late (15–18)</td><td class="mono">=REGEXMATCH(D2&amp;"","^(15|16|17|18):")</td><td><span class="swatch" style="background:#FCE5CD"></span>#FCE5CD</td></tr>
+          <tr><td>6</td><td>Midday (12–14)</td><td class="mono">=REGEXMATCH(D2&amp;"","^(12|13|14):")</td><td><span class="swatch" style="background:#CFE2F3"></span>#CFE2F3</td></tr>
+          <tr><td>7</td><td>Morning (04–11)</td><td class="mono">=REGEXMATCH(D2&amp;"","^(0[4-9]|1[01]):")</td><td><span class="swatch" style="background:#D9EAD3"></span>#D9EAD3</td></tr>
+        </tbody>
+      </table>
+
+      <h3>The validator → ΠΡΟΕΙΔΟΠΟΙΗΣΕΙΣ</h3>
+      <p>A script scan (never <code>CHECK</code>) that reads the grid once and reports, per employee, with a 🛑 hard / ⚠️ soft marker:</p>
+      <table>
+        <thead><tr><th>Check</th><th>Logic</th><th>Mark</th></tr></thead>
+        <tbody>
+          <tr><td>Empty cell</td><td>No shift entered for an active employee.</td><td>⚠️</td></tr>
+          <tr><td>Invalid value</td><td>Not in <code>SHIFTS</code>.</td><td>🛑</td></tr>
+          <tr><td>Rest gap &lt; 11h</td><td>Between consecutive worked days, with correct overnight math — a shift whose end ≤ start crosses midnight, so its end is computed in absolute minutes.</td><td>🛑</td></tr>
+          <tr><td>&gt; 4 nights in a row</td><td>Consecutive 22:/23: starts.</td><td>🛑</td></tr>
+          <tr><td>&gt; 6 workdays w/o ΡΕΠΟ</td><td>Leave or repo breaks the streak.</td><td>🛑</td></tr>
+          <tr><td>Leave-sandwiched shift</td><td>A work day with leave on both sides — likely a typo.</td><td>⚠️</td></tr>
+        </tbody>
+      </table>
+      <p class="sub">Rows are sorted by employee then date; a timestamp and 🛑/⚠️ counts sit at the top. Thresholds (11h / 4 / 6) live in the <code>CONFIG.RULES</code> block — change a number, re-run.</p>
+
+      <h3>Coverage dashboard → ΣΥΝΟΨΗ</h3>
+      <p>One column per date. A <code>COUNTIF</code> row per shift value, then aggregates <code>— ΡΕΠΟ</code>, <code>— ΑΔΕΙΕΣ/ΑΝΑΡΡΩΤΙΚΕΣ</code>, <code>— ΝΥΧΤΕΡΙΝΕΣ (22:/23:)</code>, <code>— ΣΥΝΟΛΟ ΑΤΟΜΩΝ</code>, <code>— ΣΕ ΕΡΓΑΣΙΑ</code>, and an <code>ΕΝΔΕΙΞΗ</code> row that prints <code>⚠️ ΛΙΓΟΙ</code> / <code>⚠️ ΠΟΛΛΟΙ</code> / <code>✓</code> from your <code>STAFF.MIN/MAX_PER_DAY</code> limits. All live formulas over rows 2:200, so new employees appear automatically.</p>
+
+      <h3>Employee card &amp; current week</h3>
+      <p><code>ΚΑΡΤΕΛΑ ΥΠΑΛΛΗΛΟΥ</code> resolves your dropdown ΑΜΕ via <code>INDEX/MATCH</code> into that person's name and full month. <code>ΤΡΕΧΟΥΣΑ ΕΒΔΟΜΑΔΑ</code> finds today's column with <code>MATCH(TODAY(), …)</code> and shows 7 days for the whole team. Both read 2:200.</p>
+
+      <h3>Edit history → ΙΣΤΟΡΙΚΟ</h3>
+      <p>An <strong>installable</strong> <code>onEdit</code> trigger (runs as you, so it logs even when a staff editor types) records only edits inside <code>ΩΡΑΡΙΑ D2:AG200</code>: <em>Χρόνος · Email · Φύλλο · Κελί · Υπάλληλος · Ημ/νία · Παλιά τιμή · Νέα τιμή</em>. A multi-cell paste is logged once as <code>(μαζική αλλαγή)</code>; email is best-effort.</p>
+
+      <h3>Backups &amp; PDF</h3>
+      <p>A time-based trigger copies the whole spreadsheet daily at <code>02:00</code> into a Drive folder with a <code>yyyy-MM-dd</code> name, and auto-trashes copies older than <code>30</code> days (both tunable). <code>«Αντίγραφο Τώρα»</code> does it on demand. PDF export renders <code>ΩΡΑΡΙΑ</code> in landscape, drops it in a Drive folder, and shows the link.</p>
+    </section>
+
+    <!-- 06 TESTING -->
+    <section id="testing">
+      <h2><span class="num">06</span>Testing checklist</h2>
+      <p class="sub">Walk these once after setup. Each should behave exactly as described.</p>
+      <ul class="check">
+        <li><b>Dropdown rejects junk</b><span class="exp">Type <code>xyz</code> into a grid cell → refused. Pick <code>07:00-15:00</code> → accepted.</span></li>
+        <li><b>Colours fire</b><span class="exp">A <code>ΡΕΠΟ</code> goes grey, a leave token pink, a <code>22:00-06:00</code> purple, a morning shift green.</span></li>
+        <li><b>Validator catches a conflict</b><span class="exp">Give someone <code>23:00-07:00</code> then <code>07:00-15:00</code> the next day → a 🛑 rest-gap warning appears.</span></li>
+        <li><b>Coverage indicator reacts</b><span class="exp">Empty a column of shifts → that date's <code>ΕΝΔΕΙΞΗ</code> flips to <code>⚠️ ΛΙΓΟΙ</code>.</span></li>
+        <li><b>Employee card resolves</b><span class="exp">Pick an ΑΜΕ in <code>B1</code> → name + month populate.</span></li>
+        <li><b>Current week tracks today</b><span class="exp">Header dates start at today's date.</span></li>
+        <li><b>History logs an edit</b><span class="exp">Change a grid cell → a new row lands in <code>ΙΣΤΟΡΙΚΟ</code> with old/new values.</span></li>
+        <li><b>Editor is fenced in</b><span class="exp">As a test editor, try editing a name in column B → blocked; editing a grid cell → allowed.</span></li>
+        <li><b>Manual backup works</b><span class="exp"><code>«Αντίγραφο Τώρα»</code> → a copy lands in the Backups folder with today's date.</span></li>
+        <li><b>PDF exports</b><span class="exp"><code>«Εξαγωγή σε PDF»</code> → landscape PDF in the PDF folder, link shown.</span></li>
+      </ul>
+    </section>
+
+    <!-- 07 MAINTENANCE -->
+    <section id="maintenance">
+      <h2><span class="num">07</span>Maintenance, in plain language</h2>
+      <table>
+        <thead><tr><th>You want to…</th><th>Do this</th></tr></thead>
+        <tbody>
+          <tr><td>Add / change a valid shift</td><td>Edit the list in <code>SHIFT_VALUES_TEXT</code> in <code>Code.gs</code>, then run <em>Για προχωρημένους → 1</em>. Validation &amp; colours pick it up.</td></tr>
+          <tr><td>Change a threshold (rest hrs, nights, etc.)</td><td>Edit the number in <code>CONFIG.RULES</code> and re-run the validator.</td></tr>
+          <tr><td>Change staffing limits</td><td>Edit <code>CONFIG.STAFF.MIN/MAX_PER_DAY</code>, re-run <em>Σύνοψη</em>.</td></tr>
+          <tr><td>Change backup time / retention</td><td>Edit <code>CONFIG.BACKUP</code>, re-run <em>Εγκατάσταση triggers</em>.</td></tr>
+          <tr><td>Start next month</td><td>Duplicate the file, clear the grid, update row-1 dates &amp; <code>LAST_COL</code> if the day count differs, re-run setup. (I can script this for you.)</td></tr>
+          <tr><td>Switch to typing codes</td><td>Set <code>USE_CODES = true</code> and <code>INPUT_SHEET = 'CODED'</code>, re-run setup.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 08 TROUBLESHOOTING -->
+    <section id="trouble">
+      <h2><span class="num">08</span>Troubleshooting</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause &amp; fix</th></tr></thead>
+        <tbody>
+          <tr><td>No «Εργαλεία Προγράμματος» menu</td><td>Reload the tab. If still missing, the script isn't saved — re-paste &amp; save in Apps Script.</td></tr>
+          <tr><td>Dropdown shows nothing</td><td>The list/named range isn't built yet — run <em>Για προχωρημένους → 1</em>, then <em>2</em>.</td></tr>
+          <tr><td>A valid shift is flagged red / rejected</td><td>It's missing from <code>SHIFTS</code>. Add it to <code>SHIFT_VALUES_TEXT</code> and rebuild the list.</td></tr>
+          <tr><td>History not logging staff edits</td><td>The installable trigger needs the owner's one-time authorisation — re-run <em>Εγκατάσταση triggers</em> and Allow.</td></tr>
+          <tr><td>"You do not have permission"</td><td>Re-run the action once; on first use Google asks you to authorise. Review → Allow.</td></tr>
+          <tr><td>One setup step failed</td><td>The summary names it — run that single piece from the <em>Για προχωρημένους</em> submenu.</td></tr>
+          <tr><td>Need to start over on locks</td><td><em>Για προχωρημένους → ❌ Αφαίρεση όλων των προστασιών</em>, then re-apply.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="soft">
+
+    <!-- APPENDIX -->
+    <section id="appendix">
+      <h2><span class="num">A</span>Manual appendix (auditable equivalents)</h2>
+      <p class="sub">The one-click path does all of this. Here's the by-hand version so nothing is a black box.</p>
+
+      <h3>A1 · The valid-shift set seeded into <code>SHIFTS</code></h3>
+      <div class="tokens">
+        <span class="tok">04:00-12:00</span><span class="tok">05:00-13:00</span><span class="tok">06:00-14:00</span><span class="tok">07:00-15:00</span><span class="tok">07:30-15:30</span><span class="tok">08:00-16:00</span><span class="tok">09:00-17:00</span><span class="tok">10:00-18:00</span><span class="tok">10:30-18:30</span><span class="tok">11:00-19:00</span><span class="tok">12:00-20:00</span><span class="tok">12:30-20:30</span><span class="tok">13:00-21:00</span><span class="tok">13:30-21:30</span><span class="tok">14:00-22:00</span><span class="tok">14:30-22:30</span><span class="tok">15:00-23:00</span><span class="tok">15:30-23:30</span><span class="tok">16:00-00:00</span><span class="tok">17:00-01:00</span><span class="tok">18:00-02:00</span><span class="tok">22:00-06:00</span><span class="tok">23:00-07:00</span><span class="tok">07:00-13:40</span><span class="tok">08:00-14:40</span><span class="tok">09:00-15:40</span><span class="tok">10:00-16:40</span><span class="tok">11:00-17:40</span><span class="tok">12:00-18:40</span><span class="tok">13:00-19:40</span><span class="tok">14:00-20:40</span><span class="tok">15:00-21:40</span><span class="tok">16:00-22:40</span><span class="tok">16:30-23:10</span><span class="tok">17:00-23:40</span>
+        <span class="tok t">ΡΕΠΟ</span><span class="tok t">ΑΔΕΙΑ 5ΗΜΕΡΟΥ</span><span class="tok t">ΑΔΕΙΑ 6ΗΜΕΡΟΥ</span><span class="tok t">ΑΝΑΡΡΩΤΙΚΗ 5ΗΜΕΡΟΥ</span><span class="tok t">ΑΝΑΡΡΩΤΙΚΗ 6ΗΜΕΡΟΥ</span>
+      </div>
+      <p class="sub">By hand: paste these into a hidden sheet, select the cells, <em>Data → Named ranges</em>, name it <code>SHIFTS</code>.</p>
+
+      <h3>A2 · Named range + dropdown</h3>
+      <pre><span class="c">// Validation on D2:AG200, sourced from SHIFTS, rejecting invalid</span>
+<span class="k">Data → Data validation</span>
+  Range:        D2:AG200
+  Criteria:     Dropdown (from a range) =SHIFTS
+  If invalid:   <span class="k">Reject input</span>
+  Help text:    Επιλέξτε έγκυρη βάρδια από τη λίστα…</pre>
+
+      <h3>A3 · Conditional formatting</h3>
+      <p class="sub">Add the 7 rules from section 05 to range <code>D2:AG200</code>, in that order (Google evaluates top-down; first background match wins). Use “Custom formula is”.</p>
+
+      <h3>A4 · Protections</h3>
+      <pre><span class="c">// ΩΡΑΡΙΑ: protect the sheet, EXCEPT the grid</span>
+<span class="k">Data → Protect sheets and ranges → Sheet → ΩΡΑΡΙΑ</span>
+  ✓ Except certain cells:  D2:AG200
+  Permissions:             Only you
+
+<span class="c">// CODED, helpers, dashboards, log, list: whole sheet → Only you</span>
+<span class="c">// ΚΑΡΤΕΛΑ ΥΠΑΛΛΗΛΟΥ: protect sheet, except cell B1</span>
+<span class="c">// CHECK: leave alone</span></pre>
+
+      <h3>A5 · Sharing</h3>
+      <pre><span class="k">Share → General access → Anyone with the link → Viewer</span>
+<span class="k">Share → Add people</span> → your 2–3 editors as <span class="k">Editor</span>
+<span class="c">(optional) ⚙ → uncheck “Editors can change permissions and share”</span></pre>
+    </section>
+
+    <footer>
+      Delivered as <code>Code.gs</code> + this guide. I can’t edit your live sheet — you paste and run. Next: <strong>convert (if ever needed) → paste Code.gs → 🚀 one-click setup → 🔗 guided sharing → test</strong>. Ask me to repoint to <code>CODED</code>, tune thresholds/colours, or script next month’s duplicate.
+    </footer>
+  </main>
+</div>
+</body>
+</html>
