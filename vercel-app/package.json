@@ -10,7 +10,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "audit:prod": "npm audit --omit=dev"
+    "audit:prod": "npm audit --omit=dev",
+    "verify:zero-cost": "bash scripts/verify-zero-cost.sh"
   },
   "dependencies": {
     "googleapis": "173.0.0",

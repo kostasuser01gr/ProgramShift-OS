@@ -67,7 +67,21 @@ The delivered `Code.gs` already calls `notifyApp_()` from its installable `onEdi
 
 ## Deploy
 `vercel` (or connect the repo in the dashboard). Add the same env vars in the Vercel
-project, add the KV integration, set `NEXTAUTH_URL` to the production URL.
+project and set `NEXTAUTH_URL` to the production URL. No storage, database, analytics,
+or marketplace integration is required.
+
+## Zero-cost guard
+Production is intentionally limited to Vercel Hobby and a Google Cloud project with
+billing detached. Google Cloud only has the Sheets API and its service-management
+dependencies enabled. Run this after any platform or deployment change:
+
+```
+npm run verify:zero-cost
+```
+
+The command fails if Google billing is linked, Vercel is not on Hobby (or has an
+active trial), or another Google API is enabled. Free-tier exhaustion may throttle
+or pause the app; it must never be handled by enabling paid overages.
 
 ## Current boundaries
 - The production app supports authenticated schedule reading and manager/owner cell edits.
