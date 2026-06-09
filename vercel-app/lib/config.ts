@@ -27,14 +27,23 @@ export const CACHE_KEY = 'schedule:2026-06';
 export const CACHE_TTL = 60; // seconds
 
 // ── role mapping ───────────────────────────────────────────────────────────
-// In production, store this in a DB or a Google Group. For the scaffold, map a
-// few emails; everyone else is a (view-only) employee.
+// Comma-separated environment variables keep authorization out of source code.
+// Everyone not explicitly listed remains a view-only employee.
 export type Role = 'owner' | 'manager' | 'employee';
-const ROLES: Record<string, Role> = {
-  'sofia@example.com': 'owner',
-  'manager@example.com': 'manager',
-};
+
+function emailSet(value?: string): Set<string> {
+  return new Set(
+    (value ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
 export function roleFor(email?: string | null): Role {
   if (!email) return 'employee';
-  return ROLES[email.toLowerCase()] ?? 'employee';
+  const normalized = email.trim().toLowerCase();
+  if (emailSet(process.env.OWNER_EMAILS).has(normalized)) return 'owner';
+  if (emailSet(process.env.MANAGER_EMAILS).has(normalized)) return 'manager';
+  return 'employee';
 }

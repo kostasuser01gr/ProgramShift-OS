@@ -21,6 +21,19 @@ export const TEXT_TO_CODE: Record<string, string> = Object.fromEntries(
   Object.entries(CODE_TO_SHIFT).map(([code, text]) => [text, code]),
 );
 
+export const LEAVE_VALUES = [
+  'ΑΔΕΙΑ 5ΗΜΕΡΟΥ',
+  'ΑΔΕΙΑ 6ΗΜΕΡΟΥ',
+  'ΑΝΑΡΡΩΤΙΚΗ 5ΗΜΕΡΟΥ',
+  'ΑΝΑΡΡΩΤΙΚΗ 6ΗΜΕΡΟΥ',
+] as const;
+
+export const SHIFT_VALUES = [
+  '',
+  ...Object.values(CODE_TO_SHIFT),
+  ...LEAVE_VALUES,
+] as const;
+
 // Colours (same palette as the sheet's conditional formatting).
 export const CAT_COLOR: Record<Category, { bg: string; fg: string; bd: string }> = {
   empty: { bg: '#FFFFFF', fg: '#9a9286', bd: '#E3DDD0' },
@@ -36,10 +49,15 @@ export const CAT_COLOR: Record<Category, { bg: string; fg: string; bd: string }>
 export function parseShift(s: string): { start: number; end: number; hours: number; startHour: number } | null {
   const m = /^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec((s || '').trim());
   if (!m) return null;
-  const start = +m[1] * 60 + +m[2];
-  let end = +m[3] * 60 + +m[4];
+  const startHour = +m[1];
+  const startMinute = +m[2];
+  const endHour = +m[3];
+  const endMinute = +m[4];
+  if (startHour > 23 || endHour > 23 || startMinute > 59 || endMinute > 59) return null;
+  const start = startHour * 60 + startMinute;
+  let end = endHour * 60 + endMinute;
   if (end <= start) end += 1440; // crosses midnight
-  return { start, end, hours: (end - start) / 60, startHour: +m[1] };
+  return { start, end, hours: (end - start) / 60, startHour };
 }
 
 export const isRepo = (s: string) => s?.trim() === 'ΡΕΠΟ' || s?.trim() === 'R';
@@ -65,4 +83,10 @@ export function toCode(text: string): string {
   if (!t) return '';
   if (isRepo(t)) return 'R';
   return TEXT_TO_CODE[t] ?? t;
+}
+
+export function normalizeShiftValue(value: string): string | null {
+  const normalized = value.trim().toUpperCase();
+  if (normalized === 'R') return 'ΡΕΠΟ';
+  return SHIFT_VALUES.includes(normalized as (typeof SHIFT_VALUES)[number]) ? normalized : null;
 }

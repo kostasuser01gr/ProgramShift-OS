@@ -14,18 +14,22 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // Attach the resolved role to the JWT and session so UI + API can gate on it.
     async jwt({ token }) {
-      (token as any).role = roleFor(token.email);
+      token.role = roleFor(token.email);
       return token;
     },
     async session({ session, token }) {
-      (session as any).role = (token as any).role as Role;
+      session.role = token.role ?? roleFor(token.email);
       return session;
     },
   },
 };
 
-export async function currentRole(): Promise<{ email: string | null; role: Role }> {
+export async function currentRole(): Promise<{ authenticated: boolean; email: string | null; role: Role }> {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email ?? null;
-  return { email, role: (session as any)?.role ?? roleFor(email) };
+  return {
+    authenticated: Boolean(email),
+    email,
+    role: session?.role ?? roleFor(email),
+  };
 }

@@ -1,16 +1,17 @@
-// Manager home — renders the live schedule from Google Sheets (server-side),
-// plus coverage + warning summaries. This is a thin demo of the data path; the
-// full interactive UI is the prototype in the design package.
+// Manager home — live schedule, validated single-cell editing, and rule warnings.
 import { getCachedSchedule } from '@/lib/cache';
 import { coverage, warnings } from '@/lib/compute';
 import { CAT_COLOR, category } from '@/lib/shifts';
 import { currentRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { AppHeader } from '@/components/app-header';
+import { ManagerEditor } from '@/components/manager-editor';
+import { MONTH } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ManagerPage() {
-  const { role } = await currentRole();
+  const { role, email } = await currentRole();
   if (role === 'employee') redirect('/employee');
 
   const s = await getCachedSchedule();
@@ -20,10 +21,12 @@ export default async function ManagerPage() {
   const nights = cov.reduce((a, c) => a + c.night, 0);
 
   return (
-    <div className="wrap">
+    <>
+      <AppHeader role={role} email={email} />
+      <main className="wrap">
       <div className="head">
         <div>
-          <h1>Schedule — June 2026</h1>
+          <h1>Schedule — {MONTH.label}</h1>
           <div className="muted">{s.employees.length} employees · {s.dates.length} days · live from Google Sheets</div>
         </div>
         <div className="muted">Role: {role}</div>
@@ -38,16 +41,17 @@ export default async function ManagerPage() {
 
       <div className="gridwrap">
         <table>
+          <caption className="sr-only">Monthly employee shift schedule</caption>
           <thead>
             <tr>
-              <th className="nm">Employee</th>
-              {s.dates.map((d) => <th key={d.day} style={d.weekend ? { background: '#e7dfcc' } : undefined}>{d.day}</th>)}
+              <th className="nm" scope="col">Employee</th>
+              {s.dates.map((d) => <th key={d.iso} scope="col" className={d.weekend ? 'weekend' : undefined}>{d.day}</th>)}
             </tr>
           </thead>
           <tbody>
             {s.employees.map((e) => (
               <tr key={e.ame}>
-                <td className="nm">{e.surname} <span style={{ color: 'var(--faint)', fontWeight: 400 }}>{e.first}</span></td>
+                <th className="nm" scope="row">{e.surname} <span style={{ color: 'var(--faint)', fontWeight: 400 }}>{e.first}</span></th>
                 {e.shifts.map((sh, j) => {
                   const c = CAT_COLOR[category(sh)];
                   const short = category(sh) === 'repo' ? 'Ρ' : category(sh) === 'leave' ? 'Α' : (sh.split('-')[0] || '');
@@ -59,11 +63,28 @@ export default async function ManagerPage() {
         </table>
       </div>
 
-      <div className="note">
-        Editing writes one cell via <code>POST /api/cell</code> (managers/owners only) → the bound Apps Script
-        mirrors it into <code>CODED</code> and fires the webhook → the cache is invalidated. The full grid UI,
-        coverage chart, warnings inbox, requests and fairness views live in the design prototype.
+      <div className="twocol">
+        <ManagerEditor
+          employees={s.employees.map(({ ame, name }) => ({ ame, name }))}
+          days={s.dates.map(({ day, iso }) => ({ day, iso }))}
+        />
+        <section className="panel" aria-labelledby="warnings-title">
+          <h2 id="warnings-title">Priority warnings</h2>
+          {warn.length === 0 ? (
+            <p className="muted">No schedule rule warnings found.</p>
+          ) : (
+            <ul className="warninglist">
+              {warn.slice(0, 6).map((item) => (
+                <li key={`${item.ame}-${item.day}-${item.type}`}>
+                  <strong>{item.empName}</strong>
+                  <span>{item.dateLabel} · {item.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
-    </div>
+      </main>
+    </>
   );
 }

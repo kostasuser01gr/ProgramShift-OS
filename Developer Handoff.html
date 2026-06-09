@@ -87,14 +87,14 @@
   <main>
     <header style="margin-bottom:50px">
       <div class="kick">Next.js · Google Sheets · Vercel</div>
-      <h1>The Vercel app, scaffolded</h1>
-      <p class="lede">A runnable Next.js skeleton that reads and writes your live spreadsheet through a service account, caches reads in Vercel KV, and stays fresh via an Apps Script webhook. The data path works end-to-end today; the polished screens are a port away.</p>
+      <h1>The Vercel app, hardened</h1>
+      <p class="lede">A verified Next.js application that reads and writes your live spreadsheet through a service account, coalesces reads in a short-lived in-memory cache, and stays fresh via an Apps Script webhook. Staff data is authenticated, manager writes are validated, and the primary schedule flows are implemented.</p>
     </header>
 
     <section id="what">
       <h2><span class="num">00</span>What this is (and isn't)</h2>
-      <p><strong>Is:</strong> the real backbone — auth, role gating, the Google data layer, the read cache, the compute (coverage/warnings/fairness ported 1:1 from the sheet), the write path, and the webhook. <code>npm run dev</code> and you'll see your June data rendered from the live sheet.</p>
-      <p class="sub"><strong>Isn't:</strong> the finished UI. The employee/manager pages here are thin demos that prove the pipe. The full mobile PWA + manager dashboards live in the design prototype — port those components onto these routes.</p>
+      <p><strong>Is:</strong> the production data path — Google authentication, environment-driven role gating, the Sheets repository, read cache, coverage/warning/fairness computation, validated manager writes, and the signed webhook. <code>npm run dev</code> renders the live schedule.</p>
+      <p class="sub"><strong>Current boundary:</strong> schedule reading and manager cell editing are live. Swap, leave, availability, notification, and owner-setting workflows remain local prototype features until server persistence is added.</p>
       <div class="callout rec">
         <div class="tag">The one principle</div>
         <p>Everything touches Google through <code>lib/sheets.ts</code> (the <code>SheetsRepository</code>). In phase 3 you replace that one file with a <code>PostgresRepository</code> of the same shape — <code>app/</code> and <code>compute.ts</code> never change.</p>
@@ -128,7 +128,7 @@
 │  ├─ google.ts   <span style="color:#9a9286">service-account client</span>
 │  ├─ shifts.ts   <span style="color:#9a9286">code↔shift · parse · category</span>
 │  ├─ sheets.ts   <span style="color:#9a9286">SheetsRepository  ← swap later</span>
-│  ├─ cache.ts    <span style="color:#9a9286">Vercel KV read-through</span>
+│  ├─ cache.ts    <span style="color:#9a9286">coalesced in-memory read-through</span>
 │  ├─ compute.ts  <span style="color:#9a9286">coverage · warnings · fairness</span>
 │  └─ auth.ts     <span style="color:#9a9286">NextAuth + role helper</span>
 ├─ apps-script/webhook.gs
@@ -142,8 +142,8 @@
         <li><h3>Service account</h3><p>Google Cloud → create a service account, enable the <strong>Sheets API</strong>, download the JSON key, and <strong>share the spreadsheet</strong> with the service-account email (Editor — the app writes cells).</p></li>
         <li><h3>OAuth client</h3><p>Create a Google OAuth <em>Web</em> client; redirect URI <code>http://localhost:3000/api/auth/callback/google</code> (+ prod).</p></li>
         <li><h3>Env</h3><p>Copy <code>.env.example</code> → <code>.env.local</code> and fill it in (next section).</p></li>
-        <li><h3>Run</h3><p><code>npm run dev</code> → open <code>localhost:3000</code>. Without a KV store it reads the sheet live; add KV for the cache.</p></li>
-        <li><h3>Deploy</h3><p><code>vercel</code>, add the same env vars + the KV integration, set <code>NEXTAUTH_URL</code> to prod.</p></li>
+        <li><h3>Run</h3><p><code>npm run dev</code> → open <code>localhost:3000</code>. Reads use a short-lived per-instance cache.</p></li>
+        <li><h3>Verify</h3><p><code>npm run lint &amp;&amp; npm run typecheck &amp;&amp; npm test &amp;&amp; npm run build &amp;&amp; npm run audit:prod</code>.</p></li>
       </ol>
     </section>
 
@@ -157,7 +157,7 @@
           <tr><td class="mono">SCHEDULE_SHEET_ID</td><td>The spreadsheet ID (pre-filled to your June file).</td></tr>
           <tr><td class="mono">GOOGLE_CLIENT_ID / _SECRET</td><td>OAuth web client for sign-in.</td></tr>
           <tr><td class="mono">NEXTAUTH_SECRET / _URL</td><td>NextAuth session secret + base URL.</td></tr>
-          <tr><td class="mono">KV_REST_API_URL / _TOKEN</td><td>Vercel KV (auto-injected in prod).</td></tr>
+          <tr><td class="mono">OWNER_EMAILS / MANAGER_EMAILS</td><td>Comma-separated allowlists for elevated roles.</td></tr>
           <tr><td class="mono">WEBHOOK_SECRET</td><td>Shared secret with the Apps Script.</td></tr>
         </tbody>
       </table>
@@ -203,8 +203,8 @@
       <p class="sub">In order of value:</p>
       <table>
         <tbody>
-          <tr><td><strong>1 · Port the UI</strong></td><td>Move the prototype's React components onto <code>/employee</code> and <code>/manager</code> (they're already styled and data-shaped).</td></tr>
-          <tr><td><strong>2 · Requests model</strong></td><td>Add a <code>requests</code> store (KV or a tiny DB) so swaps/leave persist + drive notifications.</td></tr>
+          <tr><td><strong>1 · Requests model</strong></td><td>Add a persistent requests store so swaps and leave requests drive manager decisions and notifications.</td></tr>
+          <tr><td><strong>2 · Shared cache</strong></td><td>Move from per-instance memory to a shared cache when traffic requires cross-instance invalidation.</td></tr>
           <tr><td><strong>3 · Realtime</strong></td><td>Have the webhook push to clients via SSE so edits appear without a refresh.</td></tr>
           <tr><td><strong>4 · PWA + i18n</strong></td><td>Add the manifest/service worker and next-intl (EL/EN) for the employee app.</td></tr>
         </tbody>
@@ -212,7 +212,7 @@
     </section>
 
     <footer>
-      The scaffold is in <code>vercel-app/</code> (download from the chat). Data path is live today; the prototype is the UI spec. Ask me to port a specific screen, add the requests model, or wire SSE.
+      The production application is in <code>vercel-app/</code>; the root browser OS remains a clearly labelled local product prototype.
     </footer>
   </main>
 </div>

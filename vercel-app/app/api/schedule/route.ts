@@ -2,20 +2,28 @@
 import { NextResponse } from 'next/server';
 import { getCachedSchedule } from '@/lib/cache';
 import { coverage, warnings, stats } from '@/lib/compute';
+import { currentRole } from '@/lib/auth';
+import { MONTH } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const { authenticated } = await currentRole();
+  if (!authenticated) {
+    return NextResponse.json({ error: 'authentication required' }, { status: 401 });
+  }
+
   try {
     const schedule = await getCachedSchedule();
     return NextResponse.json({
-      month: 'June 2026',
+      month: MONTH.label,
       schedule,
       coverage: coverage(schedule),
       warnings: warnings(schedule),
       stats: stats(schedule),
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 });
+  } catch (error) {
+    console.error('Failed to load schedule', error);
+    return NextResponse.json({ error: 'schedule unavailable' }, { status: 503 });
   }
 }

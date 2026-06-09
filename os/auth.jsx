@@ -35,7 +35,6 @@ function LoginScreen({ lang, setLang, onDone }) {
   const [mode, setMode] = React.useState('login');
   const [email, setEmail] = React.useState('');
   const [name, setName] = React.useState('');
-  const [pw, setPw] = React.useState('');
   const [remember, setRemember] = React.useState(true);
   const [err, setErr] = React.useState('');
   const [, force] = React.useReducer(function (x) { return x + 1; }, 0);
@@ -50,13 +49,12 @@ function LoginScreen({ lang, setLang, onDone }) {
   function submit() {
     setErr('');
     if (mode === 'login') {
-      const s = OS.Auth.login(email.trim(), pw, remember);
+      const s = OS.Auth.login(email.trim(), remember);
       if (s && s.error === 'no_account') { setErr(en ? 'No account with that email. Try a saved/quick login below, or sign up.' : 'Δεν βρέθηκε λογαριασμός. Δοκίμασε αποθηκευμένη/γρήγορη σύνδεση ή εγγραφή.'); return; }
-      if (s && s.error === 'bad_password') { setErr(en ? 'Wrong password.' : 'Λάθος κωδικός.'); return; }
       onDone(s);
     } else {
       if (!name.trim() || !email.trim()) { setErr(en ? 'Name and email required.' : 'Απαιτείται όνομα και email.'); return; }
-      onDone(OS.Auth.signup(name.trim(), email.trim(), pw, remember));
+      onDone(OS.Auth.signup(name.trim(), email.trim(), remember));
     }
   }
 
@@ -69,7 +67,7 @@ function LoginScreen({ lang, setLang, onDone }) {
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: 'var(--serif)', fontSize: 30, margin: '0 auto 14px' }}>Σ</div>
           <div className="serif" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-.01em' }}>Program Shift</div>
-          <div style={{ color: 'var(--soft)', fontSize: 13.5, marginTop: 2 }}>{en ? 'Sign in to your operating platform' : 'Συνδέσου στην πλατφόρμα σου'}</div>
+          <div style={{ color: 'var(--soft)', fontSize: 13.5, marginTop: 2 }}>{en ? 'Local product prototype' : 'Τοπικό πρωτότυπο προϊόντος'}</div>
         </div>
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 18, padding: 22, boxShadow: '0 18px 48px rgba(0,0,0,.1)' }}>
@@ -80,10 +78,12 @@ function LoginScreen({ lang, setLang, onDone }) {
 
           {mode === 'signup' && <input className="os-input" style={{ marginBottom: 9 }} placeholder={en ? 'Full name' : 'Ονοματεπώνυμο'} value={name} onChange={function (e) { setName(e.target.value); }} />}
           <input className="os-input" style={{ marginBottom: 9 }} placeholder="email" autoComplete="username" value={email} onChange={function (e) { setEmail(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') submit(); }} />
-          <input className="os-input" type="password" placeholder={en ? 'Password' : 'Κωδικός'} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={pw} onChange={function (e) { setPw(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') submit(); }} />
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: 'var(--soft)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={remember} onChange={function (e) { setRemember(e.target.checked); }} />{en ? 'Save password for instant login' : 'Αποθήκευση κωδικού για άμεση σύνδεση'}
+            <input type="checkbox" checked={remember} onChange={function (e) { setRemember(e.target.checked); }} />{en ? 'Remember this local account' : 'Απομνημόνευση τοπικού λογαριασμού'}
           </label>
+          <div style={{ fontSize: 11.5, color: 'var(--faint)', marginTop: 9 }}>
+            {en ? 'Demo only: no password is requested or stored. Production authentication is in the Next.js app.' : 'Μόνο για demo: δεν ζητείται ή αποθηκεύεται κωδικός. Η πραγματική σύνδεση βρίσκεται στην εφαρμογή Next.js.'}
+          </div>
           {err && <div style={{ color: 'var(--red)', fontSize: 12.5, marginTop: 8 }}>{err}</div>}
           <button className="os-btn solid" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={submit}>
             <Icon name="arrow" size={15} />{mode === 'login' ? (en ? 'Continue' : 'Συνέχεια') : (en ? 'Create account' : 'Δημιουργία')}</button>
@@ -92,7 +92,7 @@ function LoginScreen({ lang, setLang, onDone }) {
         </div>
 
         {savedLogins.length > 0 && <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--faint)', margin: '0 4px 8px' }}>{en ? 'Saved accounts · instant login' : 'Αποθηκευμένοι · άμεση σύνδεση'}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--faint)', margin: '0 4px 8px' }}>{en ? 'Remembered local accounts' : 'Απομνημονευμένοι τοπικοί λογαριασμοί'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {savedLogins.map(function (s) { return (
               <div key={s.email} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 11, background: 'var(--card)', border: '1px solid var(--accent-soft)', cursor: 'pointer', textAlign: 'left' }} onClick={function () { onDone(OS.Auth.instant(s.email)); }}>

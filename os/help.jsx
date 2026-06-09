@@ -35,8 +35,8 @@ var HELP = {
   members: { el: { title: 'Μέλη & Ρόλοι', tips: ['Πάτησε τον ρόλο ενός μέλους για να τον αλλάξεις από το μενού.', 'Το × αφαιρεί ένα μέλος (επιβεβαιώνεται πρώτα).', 'Μόνο 4 προϊστάμενοι υπάρχουν εξ ορισμού· οποιονδήποτε άλλον μπορείς να τον ορίσεις χειροκίνητα.'] },
     en: { title: 'Members & Roles', tips: ['Click a member’s role to change it from the menu.', 'The × removes a member (with confirmation).', 'There are 4 supervisors by default; you can assign any other role manually.'] } },
   reservations_login: {},
-  login: { el: { title: 'Σύνδεση', tips: ['Βάλε email και κωδικό. Τσέκαρε «Αποθήκευση κωδικού» για άμεση σύνδεση την επόμενη φορά.', 'Οι αποθηκευμένοι λογαριασμοί εμφανίζονται με ⚡ — ένα κλικ και μπήκες.'] },
-    en: { title: 'Login', tips: ['Enter email and password. Tick “Save password” for instant login next time.', 'Saved accounts show a ⚡ — one click signs you in.'] } }
+  login: { el: { title: 'Σύνδεση', tips: ['Επίλεξε έναν τοπικό λογαριασμό demo. Δεν ζητείται ή αποθηκεύεται κωδικός.', 'Οι απομνημονευμένοι λογαριασμοί εμφανίζονται με ⚡ — ένα κλικ και μπήκες.'] },
+    en: { title: 'Login', tips: ['Choose a local demo account. No password is requested or stored.', 'Remembered accounts show a ⚡ — one click signs you in.'] } }
 };
 function helpFor(id, lang) { var h = HELP[id] || HELP._general; return (h[lang] || h.el || HELP._general[lang] || HELP._general.el); }
 

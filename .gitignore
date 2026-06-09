@@ -5,11 +5,14 @@
 .DS_Store
 Thumbs.db
 .thumbnail
+.playwright-cli/
 
 # Node (for vercel-app backend)
 vercel-app/node_modules
 vercel-app/.next
 vercel-app/.env.local
+vercel-app/next-env.d.ts
+vercel-app/*.tsbuildinfo
 
 # Uploads (user-generated, not committed)
 uploads/

@@ -1,7 +1,7 @@
 // lib/sheets.ts — the SheetsRepository. The ONLY place that touches Google.
 // Swap this file for a PostgresRepository in phase 3; nothing upstream changes.
 import { sheetsClient, colA1 } from './google';
-import { SHEET_ID, TABS, GRID, A1_GRID } from './config';
+import { SHEET_ID, TABS, GRID, A1_GRID, MONTH } from './config';
 import { category, type Category } from './shifts';
 
 export type Employee = {
@@ -11,12 +11,18 @@ export type Employee = {
 export type DayMeta = { day: number; dow: number; weekend: boolean; iso: string };
 export type Schedule = { dates: DayMeta[]; employees: Employee[] };
 
-function toDate(v: any): Date | null {
+function toDate(v: unknown): Date | null {
   if (v instanceof Date) return v;
   // Sheets returns serial numbers when valueRenderOption=UNFORMATTED.
   if (typeof v === 'number') return new Date(Date.UTC(1899, 11, 30) + v * 86400000);
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(String(v).trim());
-  if (m) { const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; return new Date(y, +m[2] - 1, +m[1]); }
+  const text = String(v ?? '').trim();
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(text);
+  if (m) {
+    const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+    return new Date(Date.UTC(y, +m[2] - 1, +m[1]));
+  }
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(text) ? new Date(`${text}T00:00:00Z`) : null;
+  if (iso && !Number.isNaN(iso.getTime())) return iso;
   return null;
 }
 
@@ -24,7 +30,7 @@ function toDate(v: any): Date | null {
 export async function getSchedule(): Promise<Schedule> {
   const api = sheetsClient();
   const res = await api.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID, range: A1_GRID, valueRenderOption: 'FORMATTED_VALUE',
+    spreadsheetId: SHEET_ID, range: A1_GRID, valueRenderOption: 'UNFORMATTED_VALUE',
   });
   const rows = res.data.values || [];
   const header = rows[0] || [];
@@ -32,8 +38,14 @@ export async function getSchedule(): Promise<Schedule> {
   const nCols = GRID.lastCol - GRID.firstCol + 1;
   const dates: DayMeta[] = [];
   for (let c = 0; c < nCols; c++) {
-    const d = toDate(header[GRID.firstCol - 1 + c]) ?? new Date(2026, 5, c + 1);
-    dates.push({ day: d.getDate(), dow: d.getDay(), weekend: d.getDay() === 0 || d.getDay() === 6, iso: d.toISOString().slice(0, 10) });
+    const d = toDate(header[GRID.firstCol - 1 + c]) ?? new Date(Date.UTC(MONTH.year, MONTH.month - 1, c + 1));
+    const dow = d.getUTCDay();
+    dates.push({
+      day: d.getUTCDate(),
+      dow,
+      weekend: dow === 0 || dow === 6,
+      iso: d.toISOString().slice(0, 10),
+    });
   }
 
   const employees: Employee[] = [];
@@ -60,6 +72,9 @@ export async function getSchedule(): Promise<Schedule> {
  * fires the webhook — so we only ever write the human-readable ΩΡΑΡΙΑ sheet.
  */
 export async function setCell(ame: string, dayIndex: number, value: string): Promise<string> {
+  if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= GRID.days) {
+    throw new Error('Day index is outside the schedule grid.');
+  }
   const api = sheetsClient();
   // find the row of this employee
   const idRes = await api.spreadsheets.values.get({

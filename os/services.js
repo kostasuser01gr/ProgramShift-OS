@@ -370,12 +370,12 @@
 
   var Auth = (function () {
     var session = load('session', null);
-    var creds = load('creds', {});        // email(lower) -> password (saved for instant login)
     var saved = load('savedlogins', []);  // [{email,name,role}] for the "saved accounts" picker
+    // v3 migration: this browser-only prototype must never retain raw passwords.
+    try { localStorage.removeItem('psos.creds'); } catch (e) { /* storage unavailable */ }
     function find(email) { return Members.list().filter(function (m) { return (m.email || '').toLowerCase() === String(email || '').toLowerCase(); })[0]; }
-    function rememberCred(email, password, m) {
+    function rememberAccount(email, m) {
       var k = String(email || '').toLowerCase();
-      if (password) creds[k] = password; save('creds', creds);
       if (saved.filter(function (s) { return s.email.toLowerCase() === k; }).length === 0) { saved.unshift({ email: m.email, name: m.name, role: m.role }); saved = saved.slice(0, 8); save('savedlogins', saved); }
     }
     function begin(m) { session = { id: m.id, name: m.name, email: m.email, role: m.role }; save('session', session); Bus.emit('user.logged_in', session); Audit.add({ action: 'user.login', target: m.name, role: m.role, module: 'auth' }); return session; }
@@ -383,28 +383,23 @@
       current: function () { return session; },
       find: find,
       savedLogins: function () { return saved.slice(); },
-      hasCred: function (email) { return !!creds[String(email || '').toLowerCase()]; },
-      forget: function (email) { var k = String(email || '').toLowerCase(); delete creds[k]; saved = saved.filter(function (s) { return s.email.toLowerCase() !== k; }); save('creds', creds); save('savedlogins', saved); },
-      // login(email, password, remember). If the account has no stored password yet, the first
-      // password provided is set. If it has one, it must match. remember=save for instant login.
-      login: function (email, password, remember) {
+      hasCred: function (email) { var k = String(email || '').toLowerCase(); return saved.some(function (s) { return s.email.toLowerCase() === k; }); },
+      forget: function (email) { var k = String(email || '').toLowerCase(); saved = saved.filter(function (s) { return s.email.toLowerCase() !== k; }); save('savedlogins', saved); },
+      // Local prototype account selection only. Real authentication lives in vercel-app.
+      login: function (email, remember) {
         var m = find(email); if (!m) return { error: 'no_account' };
-        var k = String(email).toLowerCase();
-        if (creds[k]) { if (password != null && password !== '' && password !== creds[k]) return { error: 'bad_password' }; }
-        else if (password) { creds[k] = password; save('creds', creds); }
-        if (remember) rememberCred(email, password, m);
+        if (remember) rememberAccount(email, m);
         return begin(m);
       },
-      // instant login from a saved account (password already stored)
+      // Instant local account selection; no credential is stored.
       instant: function (email) { var m = find(email); if (!m) return { error: 'no_account' }; Audit.add({ action: 'user.instant_login', target: m.name, role: m.role, module: 'auth' }); return begin(m); },
       loginAs: function (m) { return begin(m); },
-      signup: function (name, email, password, remember) {
-        var existing = find(email); if (existing) { return this.login(existing.email, password, remember); }
+      signup: function (name, email, remember) {
+        var existing = find(email); if (existing) { return this.login(existing.email, remember); }
         var recognized = recognizeSupervisor(name, email);
         var role = recognized ? recognized.role : 'employee';
         var m = Members.add({ name: name, first: (name || '').split(' ')[0], email: email, role: role, dept: recognized ? recognized.dept : null });
-        if (password) { creds[String(email).toLowerCase()] = password; save('creds', creds); }
-        if (remember) rememberCred(email, password, m);
+        if (remember) rememberAccount(email, m);
         session = { id: m.id, name: m.name, email: m.email, role: role }; save('session', session);
         Bus.emit('user.logged_in', session); Audit.add({ action: recognized ? 'user.signup.supervisor' : 'user.signup', target: name + (recognized ? ' → ' + role : ''), role: role, module: 'auth' }); return session;
       },

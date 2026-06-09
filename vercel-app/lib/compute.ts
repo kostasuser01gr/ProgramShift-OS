@@ -78,7 +78,11 @@ export function stats(s: Schedule): { rows: StatRow[]; avg: Record<string, numbe
     return { idx: e.idx, name: e.name, ame: e.ame, days, hours: Math.round(hours * 10) / 10, nights, wknd, repo };
   });
   const avg: Record<string, number> = {};
+  if (rows.length === 0) {
+    for (const k of ['days', 'hours', 'nights', 'wknd', 'repo']) avg[k] = 0;
+    return { rows, avg };
+  }
   for (const k of ['days', 'hours', 'nights', 'wknd', 'repo'] as const)
-    avg[k] = Math.round((rows.reduce((a, r) => a + (r as any)[k], 0) / rows.length) * 10) / 10;
+    avg[k] = Math.round((rows.reduce((a, r) => a + r[k], 0) / rows.length) * 10) / 10;
   return { rows, avg };
 }
