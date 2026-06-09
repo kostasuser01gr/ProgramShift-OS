@@ -8,7 +8,7 @@ var SHELL = [
   './app/styles.css', './os/os.css',
   './app/data.js', './app/i18n.js', './os/services.js',
   './app/ios-frame.jsx', './app/ui.jsx', './app/owner.jsx', './app/employee.jsx', './app/manager.jsx',
-  './os/modules.jsx', './os/modules2.jsx', './os/modules3.jsx', './os/modules4.jsx', './os/auth.jsx', './os/shell.jsx', './os/root.jsx',
+  './os/modules.jsx', './os/modules2.jsx', './os/modules3.jsx', './os/modules4.jsx', './os/modules5.jsx', './os/modules6.jsx', './os/help.jsx', './os/ai-agent.jsx', './os/auth.jsx', './os/shell.jsx', './os/root.jsx',
   './icons/icon-192.png', './icons/icon-512.png'
 ];
 

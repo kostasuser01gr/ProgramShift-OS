@@ -203,10 +203,10 @@ function recompute(D, emps, dates) {
     let nightRun = 0, workRun = 0;
     for (let j = 0; j < DAYS; j++) {
       const t = D.parseShift(e.shifts[j]);
-      if (t && (t.startHour === 22 || t.startHour === 23)) { nightRun++; if (nightRun === D.RULES.maxNights + 1) warnings.push(mw('hard', e, j, dates, lang_('nights', e, D))); } else nightRun = 0;
-      if (t) { workRun++; if (workRun === D.RULES.maxWork + 1) warnings.push(mw('hard', e, j, dates, { el: 'Πάνω από ' + D.RULES.maxWork + ' ημέρες χωρίς ρεπό', en: 'More than ' + D.RULES.maxWork + ' workdays without a day off' })); } else workRun = 0;
-      if (t && j + 1 < DAYS) { const nx = D.parseShift(e.shifts[j + 1]); if (nx) { const rest = (1440 + nx.start) - t.end; if (rest >= 0 && rest < D.RULES.minRest * 60) warnings.push(mw('hard', e, j, dates, { el: 'Ανάπαυση ' + (rest / 60).toFixed(1) + 'ω πριν την επόμενη βάρδια', en: (rest / 60).toFixed(1) + 'h rest before next shift' }, j + 1)); } }
-      if (t && j > 0 && j + 1 < DAYS && D.isLeave(e.shifts[j - 1]) && D.isLeave(e.shifts[j + 1])) warnings.push(mw('soft', e, j, dates, { el: 'Βάρδια ανάμεσα σε δύο άδειες', en: 'Shift between two leave days' }));
+      if (t && (t.startHour === 22 || t.startHour === 23)) { nightRun++; if (nightRun === D.RULES.maxNights + 1) warnings.push(mw('hard', e, j, dates, lang_('nights', e, D), null, 'nights')); } else nightRun = 0;
+      if (t) { workRun++; if (workRun === D.RULES.maxWork + 1) warnings.push(mw('hard', e, j, dates, { el: 'Πάνω από ' + D.RULES.maxWork + ' ημέρες χωρίς ρεπό', en: 'More than ' + D.RULES.maxWork + ' workdays without a day off' }, null, 'streak')); } else workRun = 0;
+      if (t && j + 1 < DAYS) { const nx = D.parseShift(e.shifts[j + 1]); if (nx) { const rest = (1440 + nx.start) - t.end; if (rest >= 0 && rest < D.RULES.minRest * 60) warnings.push(mw('hard', e, j, dates, { el: 'Ανάπαυση ' + (rest / 60).toFixed(1) + 'ω πριν την επόμενη βάρδια', en: (rest / 60).toFixed(1) + 'h rest before next shift' }, j + 1, 'rest')); } }
+      if (t && j > 0 && j + 1 < DAYS && D.isLeave(e.shifts[j - 1]) && D.isLeave(e.shifts[j + 1])) warnings.push(mw('soft', e, j, dates, { el: 'Βάρδια ανάμεσα σε δύο άδειες', en: 'Shift between two leave days' }, null, 'sandwich'));
     }
   });
   warnings.sort((a, b) => a.empName < b.empName ? -1 : (a.empName > b.empName ? 1 : a.day - b.day));
@@ -226,7 +226,7 @@ function recompute(D, emps, dates) {
   return { coverage, warnings, stats: { rows, avg } };
 }
 function lang_(type, e, D) { return { el: 'Πάνω από ' + D.RULES.maxNights + ' συνεχόμενες νύχτες', en: 'More than ' + D.RULES.maxNights + ' consecutive nights' }; }
-function mw(sev, e, j, dates, msg, j2) { const mo = dates[j].date.getMonth() + 1; let dl = dates[j].day + '/' + mo; if (j2 != null) dl += '→' + dates[j2].day + '/' + (dates[j2].date.getMonth() + 1); return { sev, empName: e.name, ame: e.ame, day: dates[j].day, dateLabel: dl, el: msg.el, en: msg.en }; }
+function mw(sev, e, j, dates, msg, j2, type) { const mo = dates[j].date.getMonth() + 1; let dl = dates[j].day + '/' + mo; if (j2 != null) dl += '→' + dates[j2].day + '/' + (dates[j2].date.getMonth() + 1); return { sev, type: type || 'other', empName: e.name, ame: e.ame, day: dates[j].day, dateLabel: dl, el: msg.el, en: msg.en }; }
 
 /* ---------- GRID ---------- */
 function GridView({ D, T, lang, month, emps, setEdit }) {

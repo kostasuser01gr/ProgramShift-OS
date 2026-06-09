@@ -286,5 +286,10 @@ table.data tr.avg td{font-weight:700;background:#faf4e6;border-top:1.5px solid v
 .rolechip.manager{background:var(--blue-soft);color:var(--blue)}
 .rolechip.employee{background:#ece5d6;color:var(--soft)}
 .rolechip.viewer{background:var(--line2);color:var(--soft)}
+.rolechip.inspector{background:var(--accent-soft);color:var(--accent)}
+.rolechip.coordinator{background:var(--green-soft);color:var(--green)}
+.rolechip.cs_supervisor{background:var(--blue-soft);color:var(--blue)}
+.rolechip.fleet_supervisor{background:var(--amber-soft);color:var(--amber)}
+.rolechip.admin{background:var(--accent-soft);color:var(--accent)}
 
 .empty-hint{color:var(--faint);font-size:13px;text-align:center;padding:30px}

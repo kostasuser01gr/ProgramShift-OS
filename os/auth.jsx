@@ -32,11 +32,15 @@ function LoginScreen({ lang, setLang, onDone }) {
   const [mode, setMode] = React.useState('login');
   const [email, setEmail] = React.useState('');
   const [name, setName] = React.useState('');
+  const [pw, setPw] = React.useState('');
+  const [remember, setRemember] = React.useState(true);
   const [err, setErr] = React.useState('');
+  const [, force] = React.useReducer(function (x) { return x + 1; }, 0);
 
   const all = OS.Members.list();
+  const savedLogins = OS.Auth.savedLogins();
   const owner = all.filter(function (m) { return m.role === 'owner'; })[0];
-  const mgr = all.filter(function (m) { return m.role === 'manager'; })[0];
+  const mgr = all.filter(function (m) { return OS.isSupervisor(m.role) && m.role !== 'owner'; })[0];
   const emp = all.filter(function (m) { return m.role === 'employee'; })[0];
   const quick = [owner, mgr, emp].filter(Boolean);
   const tint = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)' };
@@ -44,12 +48,13 @@ function LoginScreen({ lang, setLang, onDone }) {
   function submit() {
     setErr('');
     if (mode === 'login') {
-      const s = OS.Auth.login(email.trim());
-      if (!s) { setErr(en ? 'No account with that email. Try a quick login below, or sign up.' : 'Δεν βρέθηκε λογαριασμός. Δοκίμασε γρήγορη σύνδεση ή εγγραφή.'); return; }
+      const s = OS.Auth.login(email.trim(), pw, remember);
+      if (s && s.error === 'no_account') { setErr(en ? 'No account with that email. Try a saved/quick login below, or sign up.' : 'Δεν βρέθηκε λογαριασμός. Δοκίμασε αποθηκευμένη/γρήγορη σύνδεση ή εγγραφή.'); return; }
+      if (s && s.error === 'bad_password') { setErr(en ? 'Wrong password.' : 'Λάθος κωδικός.'); return; }
       onDone(s);
     } else {
       if (!name.trim() || !email.trim()) { setErr(en ? 'Name and email required.' : 'Απαιτείται όνομα και email.'); return; }
-      onDone(OS.Auth.signup(name.trim(), email.trim()));
+      onDone(OS.Auth.signup(name.trim(), email.trim(), pw, remember));
     }
   }
 
@@ -72,13 +77,30 @@ function LoginScreen({ lang, setLang, onDone }) {
           </div>
 
           {mode === 'signup' && <input className="os-input" style={{ marginBottom: 9 }} placeholder={en ? 'Full name' : 'Ονοματεπώνυμο'} value={name} onChange={function (e) { setName(e.target.value); }} />}
-          <input className="os-input" placeholder="email" value={email} onChange={function (e) { setEmail(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') submit(); }} />
+          <input className="os-input" style={{ marginBottom: 9 }} placeholder="email" autoComplete="username" value={email} onChange={function (e) { setEmail(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') submit(); }} />
+          <input className="os-input" type="password" placeholder={en ? 'Password' : 'Κωδικός'} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={pw} onChange={function (e) { setPw(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') submit(); }} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: 'var(--soft)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={remember} onChange={function (e) { setRemember(e.target.checked); }} />{en ? 'Save password for instant login' : 'Αποθήκευση κωδικού για άμεση σύνδεση'}
+          </label>
           {err && <div style={{ color: 'var(--red)', fontSize: 12.5, marginTop: 8 }}>{err}</div>}
           <button className="os-btn solid" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={submit}>
             <Icon name="arrow" size={15} />{mode === 'login' ? (en ? 'Continue' : 'Συνέχεια') : (en ? 'Create account' : 'Δημιουργία')}</button>
 
           {mode === 'signup' && <div style={{ fontSize: 11.5, color: 'var(--faint)', marginTop: 9, textAlign: 'center' }}>{en ? 'New accounts start as Employee. A supervisor sets your role.' : 'Οι νέοι λογαριασμοί ξεκινούν ως Υπάλληλος. Ο ρόλος ορίζεται από προϊστάμενο.'}</div>}
         </div>
+
+        {savedLogins.length > 0 && <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--faint)', margin: '0 4px 8px' }}>{en ? 'Saved accounts · instant login' : 'Αποθηκευμένοι · άμεση σύνδεση'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {savedLogins.map(function (s) { return (
+              <div key={s.email} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 11, background: 'var(--card)', border: '1px solid var(--accent-soft)', cursor: 'pointer', textAlign: 'left' }} onClick={function () { onDone(OS.Auth.instant(s.email)); }}>
+                <span className="avatar" style={{ width: 30, height: 30, fontSize: 12, background: tint[s.role] || 'var(--line2)', color: s.role === 'employee' || s.role === 'viewer' ? 'var(--soft)' : '#fff' }}>{(s.name || '?')[0]}</span>
+                <span style={{ flex: 1 }}><span style={{ fontWeight: 600, fontSize: 13.5, display: 'block', color: 'var(--ink)' }}>{s.name}</span><span style={{ fontSize: 11.5, color: 'var(--faint)' }}>{s.email}</span></span>
+                <span title={en ? 'Instant login' : 'Άμεση σύνδεση'} style={{ color: 'var(--accent)', display: 'flex' }}><Icon name="zap" size={16} /></span>
+                <span title={en ? 'Forget' : 'Διαγραφή'} onClick={function (e) { e.stopPropagation(); OS.Auth.forget(s.email); force(); }} style={{ color: 'var(--faint)', display: 'flex', padding: 2 }}><Icon name="x" size={14} /></span>
+              </div>); })}
+          </div>
+        </div>}
 
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--faint)', margin: '0 4px 8px' }}>{en ? 'Quick login (demo)' : 'Γρήγορη σύνδεση (demo)'}</div>

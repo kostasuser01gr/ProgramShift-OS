@@ -165,8 +165,8 @@ function MembersModule() {
   const [adding, setAdding] = React.useState(false);
   const [newName, setNewName] = React.useState('');
 
-  const ROLES = ['owner', 'manager', 'employee', 'viewer'];
-  const tint = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)' };
+  const ROLES = ['owner', 'inspector', 'coordinator', 'cs_supervisor', 'fleet_supervisor', 'manager', 'employee', 'viewer'];
+  const tint = { owner: 'var(--accent)', admin: 'var(--accent)', inspector: 'var(--accent)', coordinator: 'var(--green)', cs_supervisor: 'var(--blue)', fleet_supervisor: 'var(--amber)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)' };
   const all = OS.Members.list();
   const counts = OS.Members.counts();
   const norm = function (s) { return String(s).toLowerCase().replace(/ς/g, 'σ'); };

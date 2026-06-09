@@ -5,6 +5,12 @@
     role_employee: ['Υπάλληλος', 'Employee'],
     role_manager:  ['Διαχειριστής', 'Manager'],
     role_owner:    ['Ιδιοκτήτης', 'Owner'],
+    role_viewer:   ['Προβολή', 'Viewer'],
+    role_admin:    ['Διαχειριστής', 'Admin'],
+    role_inspector:     ['Επιθεωρητής Προγράμματος', 'Program Inspector'],
+    role_coordinator:   ['Συντονιστής Σταθμού', 'Station Coordinator'],
+    role_cs_supervisor: ['Επόπτης Εξυπ. Πελατών', 'Customer Service Supervisor'],
+    role_fleet_supervisor: ['Επόπτης Στόλου', 'Fleet Supervisor'],
     appname:       ['Πρόγραμμα', 'Schedule'],
     month_june:    ['Ιούνιος 2026', 'June 2026'],
 
@@ -152,7 +158,6 @@
     imp_note:     ['Στην παραγωγή, τα .xlsx διαβάζονται στον server και γράφονται στο Google Sheet.', 'In production, .xlsx is parsed on the server and written to the Google Sheet.'],
 
     // members & roles
-    role_viewer:  ['Προβολή', 'Viewer'],
     mem_search:   ['Αναζήτηση μέλους…', 'Search member…'],
     mem_remove:   ['Αφαίρεση', 'Remove'],
     mem_remove_q: ['Αφαίρεση του μέλους από το πρόγραμμα;', 'Remove this member from the program?'],

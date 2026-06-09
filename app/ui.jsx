@@ -40,7 +40,11 @@ function Icon({ name, size = 18, color = 'currentColor', style }) {
     folder:  <path d="M3 7a1 1 0 0 1 1-1h4.5l2 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>,
     clipboard:<g><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 12h6M9 16h4"/></g>,
     idcard:  <g><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5.5 16a2.7 2.7 0 0 1 5 0M14 10h4M14 13.5h3"/></g>,
+    lifebuoy:<g><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9"/></g>,
     sunrise: <g><path d="M3 18h18M12 4v3M5.5 10 4 8.5M18.5 10 20 8.5"/><path d="M7.5 18a4.5 4.5 0 0 1 9 0"/></g>,
+    building:<g><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/></g>,
+    lock:    <g><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></g>,
+    tag:     <g><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.4"/></g>,
   };
   return <svg {...p}>{G[name] || null}</svg>;
 }

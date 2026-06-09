@@ -60,6 +60,9 @@
     'files.manage':        ['owner', 'manager', 'employee'],
     'forms.manage':        ['owner', 'manager'],
     'forms.fill':          ['owner', 'manager', 'employee'],
+    'reservations.view':   ['owner', 'manager', 'employee', 'viewer'],
+    'reservations.upload': ['owner', 'manager', 'employee'],
+    'reservations.manage': ['owner', 'manager'],
     'members.manage':      ['owner'],
     'members.view':        ['owner', 'manager'],
     'members.edit':        ['owner', 'manager'],
@@ -72,9 +75,21 @@
     'chat.post':           ['owner', 'manager', 'employee']
   };
   var Perms = {
-    can: function (role, action) { var a = PERM[action]; return !a ? true : a.indexOf(role) >= 0; },
+    // Specialized roles resolve to a permission TIER, so new supervisor roles
+    // never require rewriting the matrix — the "future-proof permission engine".
+    tier: function (role) { return ROLE_TIER[role] || role || 'employee'; },
+    can: function (role, action) { var a = PERM[action]; if (!a) return true; var t = ROLE_TIER[role] || role; return a.indexOf(t) >= 0 || a.indexOf(role) >= 0; },
     matrix: PERM
   };
+  // role -> permission tier (owner = full, manager = supervisor, employee, viewer)
+  var ROLE_TIER = {
+    owner: 'owner', admin: 'owner', inspector: 'owner',
+    manager: 'manager', supervisor: 'manager', coordinator: 'manager',
+    cs_supervisor: 'manager', fleet_supervisor: 'manager',
+    employee: 'employee', viewer: 'viewer'
+  };
+  // supervisor department/title (for dashboards + display)
+  var ROLE_DEPT = { inspector: 'inspection', coordinator: 'station', cs_supervisor: 'customer', fleet_supervisor: 'fleet' };
 
   // ---- notifications --------------------------------------------------------
   var Notify = (function () {
@@ -150,6 +165,45 @@
       ] }
   ]);
   var FormSubs = Collection('form_subs', []);
+
+  // ---- reservations (dynamic operational load) ------------------------------
+  // type: return | delivery | inspection | service ; dept: fleet | customer | station
+  var Reservations = (function () {
+    var coll = Collection('reservations', [
+      { id: 'rv_s1', day: 12, type: 'delivery', dept: 'customer', customer: 'A. Nikolaou', vehicle: 'ABC-1234', note: '', status: 'confirmed', at: Date.now() - 7200000, by: 'Σοφία' },
+      { id: 'rv_s2', day: 12, type: 'return', dept: 'fleet', customer: 'M. Papadaki', vehicle: 'XYZ-5678', note: '', status: 'confirmed', at: Date.now() - 6400000, by: 'Σοφία' },
+      { id: 'rv_s3', day: 13, type: 'delivery', dept: 'customer', customer: 'G. Ioannou', vehicle: 'KLM-2211', note: 'VIP', status: 'confirmed', at: Date.now() - 5200000, by: 'Σοφία' },
+      { id: 'rv_s4', day: 13, type: 'inspection', dept: 'fleet', customer: '—', vehicle: 'KLM-2211', note: '', status: 'pending', at: Date.now() - 5000000, by: 'Σοφία' },
+      { id: 'rv_s5', day: 14, type: 'delivery', dept: 'customer', customer: 'D. Georgiou', vehicle: 'PPL-9090', note: '', status: 'confirmed', at: Date.now() - 4000000, by: 'Σοφία' }
+    ]);
+    function sig(r) { return [r.day, r.type, (r.vehicle || '').toUpperCase().trim(), (r.customer || '').toLowerCase().trim()].join('|'); }
+    return {
+      all: coll.all, get: coll.get, update: coll.update, remove: coll.remove,
+      add: function (rec) { var it = coll.add(Object.assign({ status: 'confirmed', at: Date.now() }, rec)); Bus.emit('record.created', { type: 'reservation', id: it.id }); return it; },
+      signature: sig,
+      // returns {dupes:[], conflicts:[]} for a candidate list against existing
+      analyze: function (candidates) {
+        var existing = coll.all(); var seen = {}; existing.forEach(function (r) { seen[sig(r)] = r; });
+        var dupes = [], conflicts = [], localSeen = {};
+        candidates.forEach(function (c, i) {
+          var s = sig(c);
+          if (seen[s] || localSeen[s]) dupes.push(i);
+          localSeen[s] = true;
+          // conflict: same vehicle, same day, different type return+delivery
+          existing.concat(candidates.slice(0, i)).forEach(function (r) {
+            if (r.vehicle && c.vehicle && r.vehicle.toUpperCase() === c.vehicle.toUpperCase() && r.day === c.day && r.type !== c.type && conflicts.indexOf(i) < 0) conflicts.push(i);
+          });
+        });
+        return { dupes: dupes, conflicts: conflicts };
+      },
+      importMany: function (list, by) {
+        var n = 0; list.forEach(function (r) { coll.add(Object.assign({ status: 'confirmed', at: Date.now(), by: by || 'import' }, r)); n++; });
+        Bus.emit('reservations.imported', { count: n }); return n;
+      },
+      byDay: function () { var m = {}; coll.all().forEach(function (r) { (m[r.day] = m[r.day] || []).push(r); }); return m; }
+    };
+  })();
+
   var Automations = Collection('automations', [
     { id: 'au_seed1', name: 'Ειδοποίηση για υποστελέχωση', trigger: 'understaffed', action: 'notify', enabled: true, runs: 0, last: null,
       desc: 'Όταν μια ημέρα πέφτει κάτω από το ελάχιστο, στείλε ειδοποίηση.' },
@@ -223,24 +277,48 @@
   var Members = (function () {
     function seed() {
       var emps = (window.APP_DATA && window.APP_DATA.employees) || [];
-      var mgr = ['ΔΕΣΔΕΝΑΚΗ', 'ΣΥΡΙΓΩΝΑΚΗΣ'];
-      var list = [{ id: 'owner_sofia', name: 'Σοφία', first: 'Σοφία', email: 'sofia@programshift.gr', role: 'owner', ame: '—', core: true }];
+      // The ONLY supervisors, keyed by ΑΜΕ. Everyone else is an employee.
+      // 6044 Ψιστάκης Μανώλης · 6069 Τζανιδάκη Κωνσταντίνα · 6021 Μαρντογιάν Λυδία
+      var SUP = { '6044': 'coordinator', '6069': 'cs_supervisor', '6021': 'fleet_supervisor' };
+      var list = [{ id: 'owner_sofia', name: 'Σοφία', first: 'Σοφία', email: 'sofia@programshift.gr', role: 'owner', dept: 'inspection', ame: '—', core: true }];
       emps.forEach(function (e) {
         list.push({ id: 'm_' + e.ame, name: e.name, first: e.first, surname: e.surname,
           email: (greeklish(e.first) || greeklish(e.surname) || ('staff' + e.ame)) + '@programshift.gr',
-          role: mgr.indexOf(e.surname) >= 0 ? 'manager' : 'employee', ame: e.ame });
+          role: SUP[e.ame] || 'employee',
+          dept: ROLE_DEPT[SUP[e.ame]] || null, ame: e.ame });
       });
       return list;
     }
     var items = load('members', null);
     if (items == null || !items.length) { items = seed(); save('members', items); }
+    // idempotent migration: the four named supervisors carry their roles even
+    // on pre-existing localStorage data. A ONE-TIME correction (v2) also demotes
+    // the two surnames wrongly seeded as 'manager' by an earlier build — guarded
+    // by a flag so it never overrides a later MANUAL promotion.
+    (function migrateSupervisors() {
+      var SUP = { '6044': 'coordinator', '6069': 'cs_supervisor', '6021': 'fleet_supervisor' };
+      var changed = false;
+      items = items.map(function (m) {
+        if (SUP[m.ame] && m.role !== SUP[m.ame] && (m.role === 'employee' || m.role === 'manager')) { changed = true; return Object.assign({}, m, { role: SUP[m.ame], dept: ROLE_DEPT[SUP[m.ame]] }); }
+        return m;
+      });
+      if (!load('mig_sup_v2', false)) {
+        items = items.map(function (m) {
+          if (m.role === 'manager' && !SUP[m.ame] && (m.ame === '6400' || m.ame === '6537' || /ΔΕΣΔΕΝΑΚΗ|ΣΥΡΙΓΩΝΑΚΗΣ/.test(m.surname || ''))) { changed = true; return Object.assign({}, m, { role: 'employee', dept: null }); }
+          return m;
+        });
+        save('mig_sup_v2', true);
+      }
+      if (changed) save('members', items);
+    })();
     function persist() { save('members', items); }
     return {
       list: function () { return items.filter(function (m) { return !m.removed; }); },
       setRole: function (id, role) { items = items.map(function (m) { return m.id === id ? Object.assign({}, m, { role: role }) : m; }); persist(); Bus.emit('member.role_changed', { id: id, role: role }); },
       remove: function (id) { items = items.map(function (m) { return m.id === id ? Object.assign({}, m, { removed: true }) : m; }); persist(); Bus.emit('member.removed', { id: id }); },
+      restore: function (rec) { var id = rec && rec.id; var found = false; items = items.map(function (m) { if (m.id === id) { found = true; return Object.assign({}, m, { removed: false }); } return m; }); if (!found && rec) items.push(Object.assign({}, rec, { removed: false })); persist(); Bus.emit('member.added', rec || {}); },
       add: function (rec) { var it = Object.assign({ id: uid('m'), role: 'employee', ame: '—' }, rec); items.push(it); persist(); Bus.emit('member.added', it); return it; },
-      counts: function () { var c = { owner: 0, manager: 0, employee: 0, viewer: 0 }; items.filter(function (m) { return !m.removed; }).forEach(function (m) { c[m.role] = (c[m.role] || 0) + 1; }); return c; },
+      counts: function () { var c = {}; items.filter(function (m) { return !m.removed; }).forEach(function (m) { c[m.role] = (c[m.role] || 0) + 1; }); return c; },
       reseed: function () { items = seed(); save('members', items); },
       // upsert members + their pre-issued roles from an imported roster
       importRoster: function (emps) {
@@ -280,19 +358,55 @@
   })();
 
   // ---- auth / session (members directory = user directory) -----------------
+  // Recognize the four named supervisors by username (Greek or Latin).
+  function recognizeSupervisor(name, email) {
+    var s = (String(name || '') + ' ' + String(email || '')).toLowerCase().replace(/ς/g, 'σ').replace(/[\u0300-\u036f]/g, '');
+    if (/sofia|σοφια/.test(s)) return { role: 'owner', dept: 'inspection' };
+    if (/psistak|ψιστακ|manolis.*psis|μανωλη.*ψιστ/.test(s)) return { role: 'coordinator', dept: 'station' };
+    if (/tzanidak|τζανιδακ|konstantina.*tzani|κωνσταντινα.*τζαν/.test(s)) return { role: 'cs_supervisor', dept: 'customer' };
+    if (/mardogian|μαρντογιαν|lidia.*mard|λυδια.*μαρντ/.test(s)) return { role: 'fleet_supervisor', dept: 'fleet' };
+    return null;
+  }
+
   var Auth = (function () {
     var session = load('session', null);
+    var creds = load('creds', {});        // email(lower) -> password (saved for instant login)
+    var saved = load('savedlogins', []);  // [{email,name,role}] for the "saved accounts" picker
     function find(email) { return Members.list().filter(function (m) { return (m.email || '').toLowerCase() === String(email || '').toLowerCase(); })[0]; }
+    function rememberCred(email, password, m) {
+      var k = String(email || '').toLowerCase();
+      if (password) creds[k] = password; save('creds', creds);
+      if (saved.filter(function (s) { return s.email.toLowerCase() === k; }).length === 0) { saved.unshift({ email: m.email, name: m.name, role: m.role }); saved = saved.slice(0, 8); save('savedlogins', saved); }
+    }
+    function begin(m) { session = { id: m.id, name: m.name, email: m.email, role: m.role }; save('session', session); Bus.emit('user.logged_in', session); Audit.add({ action: 'user.login', target: m.name, role: m.role, module: 'auth' }); return session; }
     return {
       current: function () { return session; },
       find: find,
-      login: function (email) { var m = find(email); if (!m) return null; session = { id: m.id, name: m.name, email: m.email, role: m.role }; save('session', session); Bus.emit('user.logged_in', session); Audit.add({ action: 'user.login', target: m.name, role: m.role, module: 'auth' }); return session; },
-      loginAs: function (m) { session = { id: m.id, name: m.name, email: m.email, role: m.role }; save('session', session); Bus.emit('user.logged_in', session); Audit.add({ action: 'user.login', target: m.name, role: m.role, module: 'auth' }); return session; },
-      signup: function (name, email) {
-        var existing = find(email); if (existing) { return this.login(existing.email); }
-        var m = Members.add({ name: name, first: (name || '').split(' ')[0], email: email, role: 'employee' });
-        session = { id: m.id, name: m.name, email: m.email, role: 'employee' }; save('session', session);
-        Bus.emit('user.logged_in', session); Audit.add({ action: 'user.signup', target: name, role: 'employee', module: 'auth' }); return session;
+      savedLogins: function () { return saved.slice(); },
+      hasCred: function (email) { return !!creds[String(email || '').toLowerCase()]; },
+      forget: function (email) { var k = String(email || '').toLowerCase(); delete creds[k]; saved = saved.filter(function (s) { return s.email.toLowerCase() !== k; }); save('creds', creds); save('savedlogins', saved); },
+      // login(email, password, remember). If the account has no stored password yet, the first
+      // password provided is set. If it has one, it must match. remember=save for instant login.
+      login: function (email, password, remember) {
+        var m = find(email); if (!m) return { error: 'no_account' };
+        var k = String(email).toLowerCase();
+        if (creds[k]) { if (password != null && password !== '' && password !== creds[k]) return { error: 'bad_password' }; }
+        else if (password) { creds[k] = password; save('creds', creds); }
+        if (remember) rememberCred(email, password, m);
+        return begin(m);
+      },
+      // instant login from a saved account (password already stored)
+      instant: function (email) { var m = find(email); if (!m) return { error: 'no_account' }; Audit.add({ action: 'user.instant_login', target: m.name, role: m.role, module: 'auth' }); return begin(m); },
+      loginAs: function (m) { return begin(m); },
+      signup: function (name, email, password, remember) {
+        var existing = find(email); if (existing) { return this.login(existing.email, password, remember); }
+        var recognized = recognizeSupervisor(name, email);
+        var role = recognized ? recognized.role : 'employee';
+        var m = Members.add({ name: name, first: (name || '').split(' ')[0], email: email, role: role, dept: recognized ? recognized.dept : null });
+        if (password) { creds[String(email).toLowerCase()] = password; save('creds', creds); }
+        if (remember) rememberCred(email, password, m);
+        session = { id: m.id, name: m.name, email: m.email, role: role }; save('session', session);
+        Bus.emit('user.logged_in', session); Audit.add({ action: recognized ? 'user.signup.supervisor' : 'user.signup', target: name + (recognized ? ' → ' + role : ''), role: role, module: 'auth' }); return session;
       },
       logout: function () { Audit.add({ action: 'user.logout', role: session && session.role, module: 'auth' }); session = null; save('session', null); Bus.emit('user.logged_out', {}); }
     };
@@ -300,10 +414,14 @@
 
   window.OS = {
     uid: uid, timeAgo: timeAgo, load: load, save: save, greeklish: greeklish,
+    roleTier: function (r) { return ROLE_TIER[r] || r || 'employee'; },
+    roleDept: function (r) { return ROLE_DEPT[r] || null; },
+    isSupervisor: function (r) { var t = ROLE_TIER[r] || r; return t === 'owner' || t === 'manager'; },
+    recognizeSupervisor: recognizeSupervisor,
     norm: function (s) { return String(s || '').toLowerCase().replace(/ς/g, 'σ').replace(/[\u0300-\u036f]/g, ''); },
     Bus: Bus, Perms: Perms, Notify: Notify, Audit: Audit, Memory: Memory,
     Tasks: Tasks, Notes: Notes, Automations: Automations, Chat: Chat,
     Settings: Settings, Favorites: Favorites, Members: Members, Visibility: Visibility, Auth: Auth,
-    Files: Files, Forms: Forms, FormSubs: FormSubs, AI: AI
+    Files: Files, Forms: Forms, FormSubs: FormSubs, Reservations: Reservations, AI: AI
   };
 })();

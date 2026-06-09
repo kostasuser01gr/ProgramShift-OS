@@ -29,12 +29,16 @@ function OSRoot() {
   const [tabs, setTabs] = React.useState(savedWs && savedWs.tabs && savedWs.tabs.length ? savedWs.tabs : ['launcher']);
   const [openId, setOpenId] = React.useState(savedWs && savedWs.openId ? savedWs.openId : 'launcher');
   const [split, setSplit] = React.useState(null); // secondary module id or null
+  const [dragTab, setDragTab] = React.useState(null);
+  const [dragOverTab, setDragOverTab] = React.useState(null);
 
   // overlays
   const [palette, setPalette] = React.useState(false);
   const [aiOpen, setAIOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [monthMenu, setMonthMenu] = React.useState(false);
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  const [tourOpen, setTourOpen] = React.useState(!OS.load('onboarded', false));
   const [, force] = React.useReducer(function (x) { return x + 1; }, 0);
 
   const T = function (k) { return window.t(k, lang); };
@@ -75,6 +79,22 @@ function OSRoot() {
     OS.Bus.emit('module.opened', { id: id }); OS.Memory.add({ kind: 'navigate', text: (lang === 'en' ? 'Opened ' : 'Άνοιξε ') + (m ? (lang === 'en' ? m.name.en : m.name.el) : id) });
   }
   const [soon, setSoon] = React.useState(null);
+  function reorderTabs(from, to) {
+    if (!from || from === to) return;
+    setTabs(function (t) {
+      const arr = t.slice(); const fi = arr.indexOf(from); const tiIdx = arr.indexOf(to);
+      if (fi < 0 || tiIdx < 0) return t;
+      arr.splice(fi, 1); arr.splice(arr.indexOf(to) + (fi < tiIdx ? 1 : 0), 0, from);
+      return arr;
+    });
+  }
+  function moveTab(id, dir) {
+    setTabs(function (t) {
+      const arr = t.slice(); const i = arr.indexOf(id); const j = i + dir;
+      if (i < 0 || j < 0 || j >= arr.length) return t;
+      arr[i] = arr[j]; arr[j] = id; return arr;
+    });
+  }
   function closeTab(e, id) {
     e.stopPropagation();
     setTabs(function (t) { const nt = t.filter(function (x) { return x !== id; }); if (nt.length === 0) nt.push('launcher'); if (openId === id) setOpenId(nt[nt.length - 1]); return nt; });
@@ -128,7 +148,7 @@ function OSRoot() {
 
   // ---- not signed in → login screen ----
   if (!session) {
-    return <LoginScreen lang={lang} setLang={setLang} onDone={function (s) { setSession(s); setViewAs(null); const entry = s.role === 'employee' ? 'employee' : 'briefing'; setTabs(['launcher', entry]); setOpenId(entry); }} />;
+    return <LoginScreen lang={lang} setLang={setLang} onDone={function (s) { setSession(s); setViewAs(null); const entry = 'briefing'; setTabs(['launcher', entry]); setOpenId(entry); }} />;
   }
   function logout() { OS.Auth.logout(); setSession(null); setViewAs(null); setTabs(['launcher']); setOpenId('launcher'); }
 
@@ -153,6 +173,7 @@ function OSRoot() {
               </div>}
             </div>
 
+            <button className="os-iconbtn" onClick={function () { setHelpOpen(true); }} title={lang === 'en' ? 'Help & tips' : 'Βοήθεια & συμβουλές'} aria-label={lang === 'en' ? 'Help' : 'Βοήθεια'}><Icon name="lifebuoy" size={19} /></button>
             <button className="os-iconbtn" onClick={function () { setAIOpen(true); }} title={lang === 'en' ? 'AI Assistant' : 'Βοηθός AI'}><Icon name="sparkle" size={19} /></button>
             <button className="os-iconbtn" onClick={function () { setNotifOpen(true); }} title={lang === 'en' ? 'Notifications' : 'Ειδοποιήσεις'}><Icon name="bell" size={19} />{OS.Notify.unread() > 0 && <span className="badge">{OS.Notify.unread()}</span>}</button>
 
@@ -181,9 +202,15 @@ function OSRoot() {
           {/* main */}
           <div className="os-main">
             <div className="os-tabs">
-              {tabs.map(function (id) { const m = registry.find(function (x) { return x.id === id; }) || registry[0]; return (
-                <div key={id} className={'os-tab' + (openId === id ? ' on' : '')} role="tab" tabIndex={0} aria-selected={openId === id}
-                  onClick={function () { setOpenId(id); }} onKeyDown={function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(id); } }}>
+              {tabs.map(function (id, ti) { const m = registry.find(function (x) { return x.id === id; }) || registry[0]; return (
+                <div key={id} className={'os-tab' + (openId === id ? ' on' : '') + (dragOverTab === id ? ' dragover' : '')} role="tab" tabIndex={0} aria-selected={openId === id}
+                  draggable={true}
+                  onDragStart={function (e) { setDragTab(id); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', id); } catch (x) {} }}
+                  onDragOver={function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dragOverTab !== id) setDragOverTab(id); }}
+                  onDragLeave={function () { if (dragOverTab === id) setDragOverTab(null); }}
+                  onDrop={function (e) { e.preventDefault(); var src = dragTab; try { src = e.dataTransfer.getData('text/plain') || dragTab; } catch (x) {} reorderTabs(src, id); setDragTab(null); setDragOverTab(null); }}
+                  onDragEnd={function () { setDragTab(null); setDragOverTab(null); }}
+                  onClick={function () { setOpenId(id); }} onKeyDown={function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(id); } if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.altKey) { e.preventDefault(); moveTab(id, e.key === 'ArrowLeft' ? -1 : 1); } }}>
                   <Icon name={m.icon} size={14} />{lang === 'en' ? m.name.en : m.name.el}
                   {id !== 'launcher' && <span className="x" role="button" tabIndex={0} aria-label={lang === 'en' ? 'Close tab' : 'Κλείσιμο'} onClick={function (e) { closeTab(e, id); }} onKeyDown={function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeTab(e, id); } }}><Icon name="x" size={12} /></span>}
                 </div>); })}
@@ -199,6 +226,8 @@ function OSRoot() {
 
         {/* ---- overlays ---- */}
         {palette && <CommandPalette onClose={function () { setPalette(false); }} />}
+        {helpOpen && <ContextualHelp onClose={function () { setHelpOpen(false); }} />}
+        {tourOpen && <OnboardingTour lang={lang} onClose={function () { setTourOpen(false); OS.save('onboarded', true); }} />}
         {aiOpen && <AIDrawer onClose={function () { setAIOpen(false); }} />}
         {notifOpen && <NotificationCenter onClose={function () { setNotifOpen(false); }} />}
       </div>
