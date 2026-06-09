@@ -4,6 +4,9 @@
  *  from each member's record (pre-issued or set by supervisors).
  * ========================================================================== */
 
+var ROLE_TINT = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)', inspector: 'var(--accent)', coordinator: 'var(--blue)', cs_supervisor: 'var(--blue)', fleet_supervisor: 'var(--blue)' };
+var ROLE_TINT_TEXT = function (role) { return (role === 'employee' || role === 'viewer') ? 'var(--soft)' : '#fff'; };
+
 function InstallButton({ lang, block }) {
   const en = lang === 'en';
   const [state, setState] = React.useState(window.__pwaState || 'idle'); // idle | ready | done | unsupported
@@ -43,7 +46,6 @@ function LoginScreen({ lang, setLang, onDone }) {
   const mgr = all.filter(function (m) { return OS.isSupervisor(m.role) && m.role !== 'owner'; })[0];
   const emp = all.filter(function (m) { return m.role === 'employee'; })[0];
   const quick = [owner, mgr, emp].filter(Boolean);
-  const tint = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)' };
 
   function submit() {
     setErr('');
@@ -94,7 +96,7 @@ function LoginScreen({ lang, setLang, onDone }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {savedLogins.map(function (s) { return (
               <div key={s.email} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 11, background: 'var(--card)', border: '1px solid var(--accent-soft)', cursor: 'pointer', textAlign: 'left' }} onClick={function () { onDone(OS.Auth.instant(s.email)); }}>
-                <span className="avatar" style={{ width: 30, height: 30, fontSize: 12, background: tint[s.role] || 'var(--line2)', color: s.role === 'employee' || s.role === 'viewer' ? 'var(--soft)' : '#fff' }}>{(s.name || '?')[0]}</span>
+                <span className="avatar" style={{ width: 30, height: 30, fontSize: 12, background: ROLE_TINT[s.role] || 'var(--line2)', color: ROLE_TINT_TEXT(s.role) }}>{(s.name || '?')[0]}</span>
                 <span style={{ flex: 1 }}><span style={{ fontWeight: 600, fontSize: 13.5, display: 'block', color: 'var(--ink)' }}>{s.name}</span><span style={{ fontSize: 11.5, color: 'var(--faint)' }}>{s.email}</span></span>
                 <span title={en ? 'Instant login' : 'Άμεση σύνδεση'} style={{ color: 'var(--accent)', display: 'flex' }}><Icon name="zap" size={16} /></span>
                 <span title={en ? 'Forget' : 'Διαγραφή'} onClick={function (e) { e.stopPropagation(); OS.Auth.forget(s.email); force(); }} style={{ color: 'var(--faint)', display: 'flex', padding: 2 }}><Icon name="x" size={14} /></span>
@@ -107,7 +109,7 @@ function LoginScreen({ lang, setLang, onDone }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {quick.map(function (m) { return (
               <button key={m.id} onClick={function () { onDone(OS.Auth.loginAs(m)); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 11, background: 'var(--card)', border: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}>
-                <span className="avatar" style={{ width: 30, height: 30, fontSize: 12, background: tint[m.role], color: m.role === 'employee' || m.role === 'viewer' ? 'var(--soft)' : '#fff' }}>{(m.first || m.name)[0]}</span>
+                <span className="avatar" style={{ width: 30, height: 30, fontSize: 12, background: ROLE_TINT[m.role] || 'var(--line2)', color: ROLE_TINT_TEXT(m.role) }}>{(m.first || m.name)[0]}</span>
                 <span style={{ flex: 1 }}><span style={{ fontWeight: 600, fontSize: 13.5, display: 'block', color: 'var(--ink)' }}>{m.name}</span><span style={{ fontSize: 11.5, color: 'var(--faint)' }}>{m.email}</span></span>
                 <span className={'rolechip ' + m.role} style={{ marginLeft: 0 }}>{window.t('role_' + m.role, lang)}</span>
               </button>); })}
@@ -122,12 +124,20 @@ function LoginScreen({ lang, setLang, onDone }) {
 
 function UserMenu({ session, role, lang, onLogout, onViewAs }) {
   const en = lang === 'en'; const [open, setOpen] = React.useState(false);
-  const tint = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)' };
+  const ref = React.useRef(null);
   const isOwner = session.role === 'owner';
+  React.useEffect(function () {
+    if (!open) return;
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function handleKey(e) { if (e.key === 'Escape') setOpen(false); }
+    document.addEventListener('mousedown', handle);
+    document.addEventListener('keydown', handleKey);
+    return function () { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', handleKey); };
+  }, [open]);
   return (
-    <div style={{ position: 'relative' }}>
-      <button className="os-btn sm" style={{ paddingLeft: 5 }} onClick={function () { setOpen(!open); }}>
-        <span className="avatar" style={{ width: 24, height: 24, fontSize: 11, background: tint[role], color: role === 'employee' || role === 'viewer' ? 'var(--soft)' : '#fff' }}>{session.name[0]}</span>
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button className="os-btn sm" style={{ paddingLeft: 5 }} aria-haspopup="menu" aria-expanded={open} aria-label={session.name + ' — ' + (en ? 'account menu' : 'μενού λογαριασμού')} onClick={function () { setOpen(!open); }}>
+        <span className="avatar" style={{ width: 24, height: 24, fontSize: 11, background: ROLE_TINT[role] || 'var(--line2)', color: ROLE_TINT_TEXT(role) }}>{session.name[0]}</span>
         {session.name.split(' ')[0]}<Icon name="chevron" size={11} style={{ transform: 'rotate(90deg)' }} />
       </button>
       {open && <div style={{ position: 'absolute', right: 0, top: '118%', zIndex: 140, background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 12, padding: 6, minWidth: 210, boxShadow: 'var(--os-elev)' }}>

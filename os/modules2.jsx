@@ -34,7 +34,8 @@ function ChatModule() {
   const [, force] = React.useReducer(function (x) { return x + 1; }, 0);
   const [ch, setCh] = React.useState('general');
   const [text, setText] = React.useState('');
-  const me = role === 'owner' ? 'Σοφία' : role === 'manager' ? 'Χριστίνα' : 'Εγώ';
+  const session = OS.Auth.current();
+  const me = (session && session.name) || (role === 'owner' ? 'Σοφία' : role === 'manager' ? 'Χριστίνα' : 'Εγώ');
   const msgs = OS.Chat.get(ch);
   const channels = OS.Chat.channels();
 

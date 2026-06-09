@@ -37,6 +37,7 @@ function OSRoot() {
   const [aiOpen, setAIOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [monthMenu, setMonthMenu] = React.useState(false);
+  const monthMenuRef = React.useRef(null);
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [tourOpen, setTourOpen] = React.useState(!OS.load('onboarded', false));
   const [, force] = React.useReducer(function (x) { return x + 1; }, 0);
@@ -61,6 +62,16 @@ function OSRoot() {
   // persist workspace (session restore)
   React.useEffect(function () { OS.save('workspace', { tabs: tabs, openId: openId }); }, [tabs, openId]);
 
+  // month menu click-outside + escape close
+  React.useEffect(function () {
+    if (!monthMenu) return;
+    function handle(e) { if (monthMenuRef.current && !monthMenuRef.current.contains(e.target)) setMonthMenu(false); }
+    function handleKey(e) { if (e.key === 'Escape') setMonthMenu(false); }
+    document.addEventListener('mousedown', handle);
+    document.addEventListener('keydown', handleKey);
+    return function () { document.removeEventListener('mousedown', handle); document.removeEventListener('keydown', handleKey); };
+  }, [monthMenu]);
+
   // command palette hotkey
   React.useEffect(function () {
     function onKey(e) {
@@ -69,6 +80,7 @@ function OSRoot() {
     window.addEventListener('keydown', onKey); return function () { window.removeEventListener('keydown', onKey); };
   }, []);
 
+  const [soon, setSoon] = React.useState(null);
   function open(id) {
     const m = registry.find(function (x) { return x.id === id; });
     if (id === 'ai') { setAIOpen(true); return; }
@@ -78,7 +90,6 @@ function OSRoot() {
     setOpenId(id); setSplit(null);
     OS.Bus.emit('module.opened', { id: id }); OS.Memory.add({ kind: 'navigate', text: (lang === 'en' ? 'Opened ' : 'Άνοιξε ') + (m ? (lang === 'en' ? m.name.en : m.name.el) : id) });
   }
-  const [soon, setSoon] = React.useState(null);
   function reorderTabs(from, to) {
     if (!from || from === to) return;
     setTabs(function (t) {
@@ -159,14 +170,14 @@ function OSRoot() {
         <div className="os-top">
           <div className="os-brand"><span className="dot">Σ</span><div>Program Shift<small>OS · {lang === 'en' ? 'operating platform' : 'πλατφόρμα'}</small></div></div>
 
-          <div className="os-cmd" onClick={function () { setPalette(true); }}>
+          <div className="os-cmd" role="button" tabIndex={0} aria-label={lang === 'en' ? 'Search or run a command' : 'Αναζήτηση ή εντολή'} onClick={function () { setPalette(true); }} onKeyDown={function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPalette(true); } }}>
             <Icon name="search" size={15} /><span>{lang === 'en' ? 'Search or run a command' : 'Αναζήτηση ή εντολή'}</span><kbd>⌘K</kbd>
           </div>
 
           <div className="os-topactions">
             {/* month switcher */}
-            <div style={{ position: 'relative' }}>
-              <button className="os-btn sm" onClick={function () { setMonthMenu(!monthMenu); }}><Icon name="calendar" size={14} color="var(--accent)" />{lang === 'en' ? month.label.en : month.label.el}<Icon name="chevron" size={11} style={{ transform: 'rotate(90deg)' }} /></button>
+            <div ref={monthMenuRef} style={{ position: 'relative' }}>
+              <button className="os-btn sm" aria-haspopup="listbox" aria-expanded={monthMenu} aria-label={(lang === 'en' ? 'Switch month, current: ' : 'Αλλαγή μήνα, τρέχον: ') + (lang === 'en' ? month.label.en : month.label.el)} onClick={function () { setMonthMenu(!monthMenu); }}><Icon name="calendar" size={14} color="var(--accent)" />{lang === 'en' ? month.label.en : month.label.el}<Icon name="chevron" size={11} style={{ transform: 'rotate(90deg)' }} /></button>
               {monthMenu && <div style={{ position: 'absolute', right: 0, top: '120%', zIndex: 120, background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 11, padding: 6, minWidth: 200, boxShadow: 'var(--os-elev)' }}>
                 {months.map(function (m) { return <div key={m.key} onClick={function () { pickMonth(m.key); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: m.key === activeKey ? 700 : 500, background: m.key === activeKey ? 'var(--paper)' : 'transparent' }}>{lang === 'en' ? m.label.en : m.label.el}{m.key === activeKey && <Icon name="check" size={14} color="var(--green)" style={{ marginLeft: 'auto' }} />}</div>; })}
                 <div onClick={addMonth} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--accent)', borderTop: '1px solid var(--line)', marginTop: 4 }}><Icon name="plus" size={14} />{T('new_month_cta')}</div>
@@ -174,11 +185,11 @@ function OSRoot() {
             </div>
 
             <button className="os-iconbtn" onClick={function () { setHelpOpen(true); }} title={lang === 'en' ? 'Help & tips' : 'Βοήθεια & συμβουλές'} aria-label={lang === 'en' ? 'Help' : 'Βοήθεια'}><Icon name="lifebuoy" size={19} /></button>
-            <button className="os-iconbtn" onClick={function () { setAIOpen(true); }} title={lang === 'en' ? 'AI Assistant' : 'Βοηθός AI'}><Icon name="sparkle" size={19} /></button>
-            <button className="os-iconbtn" onClick={function () { setNotifOpen(true); }} title={lang === 'en' ? 'Notifications' : 'Ειδοποιήσεις'}><Icon name="bell" size={19} />{OS.Notify.unread() > 0 && <span className="badge">{OS.Notify.unread()}</span>}</button>
+            <button className="os-iconbtn" onClick={function () { setAIOpen(true); }} title={lang === 'en' ? 'AI Assistant' : 'Βοηθός AI'} aria-label={lang === 'en' ? 'AI Assistant' : 'Βοηθός AI'}><Icon name="sparkle" size={19} /></button>
+            <button className="os-iconbtn" onClick={function () { setNotifOpen(true); }} title={lang === 'en' ? 'Notifications' : 'Ειδοποιήσεις'} aria-label={lang === 'en' ? ('Notifications' + (OS.Notify.unread() > 0 ? ', ' + OS.Notify.unread() + ' unread' : '')) : ('Ειδοποιήσεις' + (OS.Notify.unread() > 0 ? ', ' + OS.Notify.unread() + ' αναγνωσμένες' : ''))}><Icon name="bell" size={19} />{OS.Notify.unread() > 0 && <span className="badge" aria-hidden="true">{OS.Notify.unread()}</span>}</button>
 
             <UserMenu session={session} role={role} lang={lang} onLogout={logout} onViewAs={setViewAs} />
-            <div className="langtoggle"><button className={lang === 'el' ? 'on' : ''} onClick={function () { setLang('el'); }}>ΕΛ</button><button className={lang === 'en' ? 'on' : ''} onClick={function () { setLang('en'); }}>EN</button></div>
+            <div className="langtoggle" role="group" aria-label={lang === 'en' ? 'Language' : 'Γλώσσα'}><button className={lang === 'el' ? 'on' : ''} aria-pressed={lang === 'el'} aria-label="Ελληνικά" onClick={function () { setLang('el'); }}>ΕΛ</button><button className={lang === 'en' ? 'on' : ''} aria-pressed={lang === 'en'} aria-label="English" onClick={function () { setLang('en'); }}>EN</button></div>
           </div>
         </div>
 
