@@ -7,7 +7,9 @@ import { currentRole } from '@/lib/auth';
 import { validateCellMutation } from '@/lib/validation';
 
 export async function POST(req: Request) {
-  const { role } = await currentRole();
+  const { authenticated, role } = await currentRole();
+  if (!authenticated)
+    return NextResponse.json({ error: 'authentication required' }, { status: 401 });
   if (role !== 'manager' && role !== 'owner')
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 

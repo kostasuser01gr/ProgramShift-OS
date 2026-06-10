@@ -1,5 +1,5 @@
 /* ============================================================================
- *  os/auth.jsx — Google-only login screen, user menu, PWA install button.
+ *  os/auth.jsx — account entry point, user menu, PWA install button.
  * ========================================================================== */
 
 var ROLE_TINT = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)', inspector: 'var(--accent)', coordinator: 'var(--blue)', cs_supervisor: 'var(--blue)', fleet_supervisor: 'var(--blue)' };
@@ -45,15 +45,15 @@ function LoginScreen({ lang, setLang, onDone }) {
 
         <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 18, padding: 22, boxShadow: '0 18px 48px rgba(0,0,0,.1)', textAlign: 'center' }}>
           <div style={{ marginBottom: 20, fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}>
-            {en ? 'Welcome to the unified Program Shift OS. Please sign in with your corporate Google account to access your tools.' : 'Καλώς ήρθατε στο ενοποιημένο Program Shift OS. Συνδεθείτε με τον εταιρικό λογαριασμό Google για πρόσβαση στα εργαλεία σας.'}
+            {en ? 'Welcome to the unified Program Shift OS. Sign in with Google or create an account with your email.' : 'Καλώς ήρθατε στο ενοποιημένο Program Shift OS. Συνδεθείτε με Google ή δημιουργήστε λογαριασμό με το email σας.'}
           </div>
 
-          <button className="os-btn solid" style={{ width: '100%', justifyContent: 'center', background: '#4285F4', color: '#fff', height: 48, borderRadius: 12, fontSize: 15, fontWeight: 600 }} onClick={function() { window.location.href = '/api/auth/signin'; }}>
+          <button className="os-btn solid" style={{ width: '100%', justifyContent: 'center', background: '#4285F4', color: '#fff', height: 48, borderRadius: 12, fontSize: 15, fontWeight: 600 }} onClick={function() { window.location.href = '/auth'; }}>
             <Icon name="user" size={18} style={{ marginRight: 8, stroke: '#fff' }} />
-            {en ? 'Sign in with Google' : 'Σύνδεση με Google'}</button>
+            {en ? 'Sign in or create account' : 'Σύνδεση ή δημιουργία λογαριασμού'}</button>
 
           <div style={{ fontSize: 12, color: 'var(--faint)', marginTop: 20 }}>
-            {en ? 'Secure authentication managed via Google Cloud Identity.' : 'Η ασφαλής σύνδεση διαχειρίζεται μέσω Google Cloud Identity.'}
+            {en ? 'New accounts receive employee access. Supervisors are assigned separately.' : 'Οι νέοι λογαριασμοί λαμβάνουν πρόσβαση εργαζομένου. Οι επόπτες ορίζονται ξεχωριστά.'}
           </div>
         </div>
 

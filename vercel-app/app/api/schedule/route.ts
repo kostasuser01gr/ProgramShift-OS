@@ -15,13 +15,15 @@ export async function GET() {
 
   try {
     const schedule = await getCachedSchedule();
-    return NextResponse.json({
+    const response = NextResponse.json({
       month: MONTH.label,
       schedule,
       coverage: coverage(schedule),
       warnings: warnings(schedule),
       stats: stats(schedule),
     });
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     console.error('Failed to load schedule', error);
     return NextResponse.json({ error: 'schedule unavailable' }, { status: 503 });

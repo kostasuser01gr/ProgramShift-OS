@@ -2,7 +2,7 @@
 
 export const SHEET_ID = process.env.SCHEDULE_SHEET_ID!;
 
-export const TABS = { oraria: 'ΩΡΑΡΙΑ', coded: 'CODED' } as const;
+export const TABS = { oraria: 'ΩΡΑΡΙΑ', coded: 'CODED', users: 'USERS' } as const;
 
 // Grid geometry — identical to the Apps Script CONFIG.GRID.
 export const GRID = {

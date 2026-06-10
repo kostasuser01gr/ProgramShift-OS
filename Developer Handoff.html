@@ -93,8 +93,8 @@
 
     <section id="what">
       <h2><span class="num">00</span>What this is (and isn't)</h2>
-      <p><strong>Is:</strong> the production data path — Google authentication, environment-driven role gating, the Sheets repository, read cache, coverage/warning/fairness computation, validated manager writes, and the signed webhook. <code>npm run dev</code> renders the live schedule.</p>
-      <p class="sub"><strong>Current boundary:</strong> schedule reading and manager cell editing are live. Swap, leave, availability, notification, and owner-setting workflows remain local prototype features until server persistence is added.</p>
+      <p><strong>Is:</strong> the unified production data path — Google or credentials authentication, protected OS assets, environment-driven role gating, authenticated schedule hydration, the Sheets repository, read cache, validated manager writes with UI rollback, and the signed webhook.</p>
+      <p class="sub"><strong>Current boundary:</strong> schedule reading and manager cell editing are live. Requests, reservations, chat, tasks, notes, files, forms, publication settings, and administration tools are explicitly labelled browser-local until server persistence is added.</p>
       <div class="callout rec">
         <div class="tag">The one principle</div>
         <p>Everything touches Google through <code>lib/sheets.ts</code> (the <code>SheetsRepository</code>). In phase 3 you replace that one file with a <code>PostgresRepository</code> of the same shape — <code>app/</code> and <code>compute.ts</code> never change.</p>
@@ -104,7 +104,7 @@
     <section id="flow">
       <h2><span class="num">01</span>Data flow</h2>
       <div class="flow">
-        <div class="frow"><span class="fnode acc">Browser</span><span class="farr">→</span><span class="fnode">GET /api/schedule</span><span class="farr">→</span><span class="fnode blu">Vercel KV</span><span class="farr">→</span><span class="fnode grn">Sheets API</span></div>
+        <div class="frow"><span class="fnode acc">Google / credentials session</span><span class="farr">→</span><span class="fnode">protected OS</span><span class="farr">→</span><span class="fnode">GET /api/schedule</span><span class="farr">→</span><span class="fnode blu">memory cache</span><span class="farr">→</span><span class="fnode grn">Sheets API</span></div>
         <div class="frow"><span class="fnode acc">Manager edits</span><span class="farr">→</span><span class="fnode">POST /api/cell</span><span class="farr">→</span><span class="fnode grn">writes ΩΡΑΡΙΑ</span><span class="farr">→</span><span class="fnode">invalidate cache</span></div>
         <div class="frow"><span class="fnode grn">Sheet edited directly</span><span class="farr">→</span><span class="fnode">Apps Script onEdit</span><span class="farr">→</span><span class="fnode">POST /api/webhook/sheets</span><span class="farr">→</span><span class="fnode">invalidate cache</span></div>
       </div>
@@ -115,14 +115,20 @@
       <h2><span class="num">02</span>File tree</h2>
       <div class="tree"><b>vercel-app/</b>
 ├─ <b>app/</b>
-│  ├─ page.tsx              <span style="color:#9a9286">role-based redirect</span>
-│  ├─ employee/page.tsx     <span style="color:#9a9286">team week (demo)</span>
+│  ├─ employee/page.tsx     <span style="color:#9a9286">team week</span>
 │  ├─ manager/page.tsx      <span style="color:#9a9286">live grid + KPIs</span>
 │  └─ api/
 │     ├─ schedule/route.ts        <span style="color:#9a9286">GET cached + derived</span>
 │     ├─ cell/route.ts            <span style="color:#9a9286">POST write (mgr/owner)</span>
 │     ├─ webhook/sheets/route.ts  <span style="color:#9a9286">POST from Apps Script</span>
-│     └─ auth/[...nextauth]/route.ts
+│     ├─ auth/[...nextauth]/route.ts
+│     └─ register/route.ts       <span style="color:#9a9286">open employee registration</span>
+│  └─ auth/page.tsx             <span style="color:#9a9286">sign-in + sign-up</span>
+├─ <b>public/</b>
+│  ├─ index.html            <span style="color:#9a9286">unified OS shell</span>
+│  ├─ app/bootstrap.js      <span style="color:#9a9286">session + authenticated schedule bootstrap</span>
+│  ├─ app/data.js           <span style="color:#9a9286">computations only; no embedded roster</span>
+│  └─ os/                   <span style="color:#9a9286">browser OS modules</span>
 ├─ <b>lib/</b>
 │  ├─ config.ts   <span style="color:#9a9286">geometry · thresholds · roles</span>
 │  ├─ google.ts   <span style="color:#9a9286">service-account client</span>
@@ -130,7 +136,8 @@
 │  ├─ sheets.ts   <span style="color:#9a9286">SheetsRepository  ← swap later</span>
 │  ├─ cache.ts    <span style="color:#9a9286">coalesced in-memory read-through</span>
 │  ├─ compute.ts  <span style="color:#9a9286">coverage · warnings · fairness</span>
-│  └─ auth.ts     <span style="color:#9a9286">NextAuth + role helper</span>
+│  ├─ auth.ts     <span style="color:#9a9286">NextAuth + role helper</span>
+│  └─ accounts.ts <span style="color:#9a9286">hashed credentials in hidden USERS tab</span>
 ├─ apps-script/webhook.gs
 ├─ .env.example · README.md · package.json · tsconfig.json</div>
     </section>
@@ -180,7 +187,8 @@
           <tr><td class="mono">/api/schedule</td><td>GET</td><td>Cached schedule + coverage + warnings + stats.</td></tr>
           <tr><td class="mono">/api/cell</td><td>POST</td><td><code>{ ame, dayIndex, value }</code> — manager/owner only; writes + invalidates.</td></tr>
           <tr><td class="mono">/api/webhook/sheets</td><td>POST</td><td>From Apps Script; <code>X-Secret</code> gated; invalidates cache.</td></tr>
-          <tr><td class="mono">/api/auth/*</td><td>—</td><td>NextAuth (Google).</td></tr>
+          <tr><td class="mono">/api/auth/*</td><td>—</td><td>NextAuth (Google + credentials).</td></tr>
+          <tr><td class="mono">/api/register</td><td>POST</td><td>Creates a bcrypt-protected employee account in the hidden <code>USERS</code> worksheet.</td></tr>
         </tbody>
       </table>
     </section>
@@ -191,9 +199,9 @@
       <table>
         <thead><tr><th>Prototype screen</th><th>Route</th><th>Data</th></tr></thead>
         <tbody>
-          <tr><td>Employee mobile (month, team, requests)</td><td class="mono">/employee</td><td><code>/api/schedule</code> + a requests table (add)</td></tr>
-          <tr><td>Manager grid / coverage / warnings / fairness</td><td class="mono">/manager</td><td><code>/api/schedule</code>, edits via <code>/api/cell</code></td></tr>
-          <tr><td>Owner settings</td><td class="mono">/owner</td><td>thresholds in <code>lib/config.ts</code> → move to DB</td></tr>
+          <tr><td>Unified OS</td><td class="mono">/</td><td>NextAuth session + <code>/api/schedule</code>; manager edits via <code>/api/cell</code></td></tr>
+          <tr><td>Employee focused view</td><td class="mono">/employee</td><td><code>/api/schedule</code></td></tr>
+          <tr><td>Manager focused view</td><td class="mono">/manager</td><td><code>/api/schedule</code>, edits via <code>/api/cell</code></td></tr>
         </tbody>
       </table>
     </section>
@@ -212,7 +220,7 @@
     </section>
 
     <footer>
-      The production application is in <code>vercel-app/</code>; the root browser OS remains a clearly labelled local product prototype.
+      The production application is in <code>vercel-app/</code>. Its <code>public/</code> directory is the deployed OS source; the repository-root browser OS is retained as a separate prototype reference.
     </footer>
   </main>
 </div>

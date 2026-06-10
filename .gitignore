@@ -16,3 +16,6 @@ vercel-app/*.tsbuildinfo
 
 # Uploads (user-generated, not committed)
 uploads/
+
+# Local verification screenshots
+verify/
