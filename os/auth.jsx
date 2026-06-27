@@ -1,5 +1,5 @@
 /* ============================================================================
- *  os/auth.jsx — Google-only login screen, user menu, PWA install button.
+ *  os/auth.jsx — user menu, PWA install button.
  * ========================================================================== */
 
 var ROLE_TINT = { owner: 'var(--accent)', manager: 'var(--blue)', employee: 'var(--line2)', viewer: 'var(--line2)', inspector: 'var(--accent)', coordinator: 'var(--blue)', cs_supervisor: 'var(--blue)', fleet_supervisor: 'var(--blue)' };
@@ -25,41 +25,6 @@ function InstallButton({ lang, block }) {
     <button className={'os-btn' + (block ? ' solid' : '')} style={block ? { width: '100%', justifyContent: 'center' } : {}} onClick={click} disabled={state === 'done'}>
       <Icon name="upload" size={14} />{label}
     </button>
-  );
-}
-
-function LoginScreen({ lang, setLang, onDone }) {
-  const en = lang === 'en';
-
-  return (
-    <div className="os" style={{ minHeight: '100vh', background: 'radial-gradient(1200px 600px at 50% -10%, #efe9dc 0%, var(--paper) 60%)', display: 'grid', placeItems: 'center', padding: 20 }}>
-      <div style={{ position: 'fixed', top: 16, right: 18 }}>
-        <div className="langtoggle"><button className={lang === 'el' ? 'on' : ''} onClick={function () { setLang('el'); }}>ΕΛ</button><button className={lang === 'en' ? 'on' : ''} onClick={function () { setLang('en'); }}>EN</button></div>
-      </div>
-      <div style={{ width: 420, maxWidth: '94vw' }}>
-        <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: 'var(--serif)', fontSize: 30, margin: '0 auto 14px' }}>Σ</div>
-          <div className="serif" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-.01em' }}>Program Shift</div>
-          <div style={{ color: 'var(--soft)', fontSize: 13.5, marginTop: 2 }}>{en ? 'Production Platform' : 'Πλατφόρμα Παραγωγής'}</div>
-        </div>
-
-        <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 18, padding: 22, boxShadow: '0 18px 48px rgba(0,0,0,.1)', textAlign: 'center' }}>
-          <div style={{ marginBottom: 20, fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}>
-            {en ? 'Welcome to the unified Program Shift OS. Please sign in with your corporate Google account to access your tools.' : 'Καλώς ήρθατε στο ενοποιημένο Program Shift OS. Συνδεθείτε με τον εταιρικό λογαριασμό Google για πρόσβαση στα εργαλεία σας.'}
-          </div>
-
-          <button className="os-btn solid" style={{ width: '100%', justifyContent: 'center', background: '#4285F4', color: '#fff', height: 48, borderRadius: 12, fontSize: 15, fontWeight: 600 }} onClick={function() { window.location.href = '/api/auth/signin'; }}>
-            <Icon name="user" size={18} style={{ marginRight: 8, stroke: '#fff' }} />
-            {en ? 'Sign in with Google' : 'Σύνδεση με Google'}</button>
-
-          <div style={{ fontSize: 12, color: 'var(--faint)', marginTop: 20 }}>
-            {en ? 'Secure authentication managed via Google Cloud Identity.' : 'Η ασφαλής σύνδεση διαχειρίζεται μέσω Google Cloud Identity.'}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}><InstallButton lang={lang} /></div>
-      </div>
-    </div>
   );
 }
 
@@ -98,4 +63,4 @@ function UserMenu({ session, role, lang, onLogout, onViewAs }) {
   );
 }
 
-Object.assign(window, { LoginScreen, UserMenu, InstallButton });
+Object.assign(window, { UserMenu, InstallButton });
