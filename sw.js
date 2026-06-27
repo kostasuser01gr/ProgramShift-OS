@@ -1,7 +1,7 @@
 /* Program Shift OS — service worker.
    NETWORK-FIRST for app code (so updates always reach users), with cache as an
    offline fallback. Cache-first would pin stale code until a manual version bump. */
-var CACHE = 'program-shift-os-v3';
+var CACHE = 'program-shift-os-v4';
 var SHELL = [
   './',
   './index.html',
