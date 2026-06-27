@@ -380,7 +380,7 @@
     }
     function begin(m) { session = { id: m.id, name: m.name, email: m.email, role: m.role }; save('session', session); Bus.emit('user.logged_in', session); Audit.add({ action: 'user.login', target: m.name, role: m.role, module: 'auth' }); return session; }
     return {
-      current: function () { return session; },
+      current: function () { return session || { id: 'demo-visitor', name: 'Demo Visitor', email: 'demo@portfolio.dev', role: 'owner' }; },
       find: find,
       savedLogins: function () { return saved.slice(); },
       hasCred: function (email) { var k = String(email || '').toLowerCase(); return saved.some(function (s) { return s.email.toLowerCase() === k; }); },

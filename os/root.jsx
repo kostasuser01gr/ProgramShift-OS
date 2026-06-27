@@ -157,11 +157,7 @@ function OSRoot() {
   const roleOpts = [{ v: 'employee', l: T('role_employee') }, { v: 'manager', l: T('role_manager') }, { v: 'owner', l: T('role_owner') }];
   const dockMods = registry.filter(function (m) { return OS.Perms.can(role, m.perm || 'app.view') && OS.Settings.get().disabledModules.indexOf(m.id) < 0; });
 
-  // ---- not signed in → login screen ----
-  if (!session) {
-    return <LoginScreen lang={lang} setLang={setLang} onDone={function (s) { setSession(s); setViewAs(null); const entry = 'briefing'; setTabs(['launcher', entry]); setOpenId(entry); }} />;
-  }
-  function logout() { OS.Auth.logout(); setSession(null); setViewAs(null); setTabs(['launcher']); setOpenId('launcher'); }
+  function logout() { OS.Auth.logout(); setSession(OS.Auth.current()); setViewAs(null); setTabs(['launcher']); setOpenId('launcher'); }
 
   return (
     <window.OSContext.Provider value={ctxValue}>
