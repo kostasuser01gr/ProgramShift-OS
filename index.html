@@ -27,29 +27,29 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <!-- data + services (plain JS) -->
-<script src="app/data.js"></script>
-<script src="app/i18n.js"></script>
-<script src="os/services.js"></script>
+<script src="app/data.js?v=4"></script>
+<script src="app/i18n.js?v=4"></script>
+<script src="os/services.js?v=4"></script>
 
 <!-- shared components + existing apps (JSX) -->
-<script type="text/babel" src="app/ios-frame.jsx"></script>
-<script type="text/babel" src="app/ui.jsx"></script>
-<script type="text/babel" src="app/owner.jsx"></script>
-<script type="text/babel" src="app/employee.jsx"></script>
-<script type="text/babel" src="app/manager.jsx"></script>
+<script type="text/babel" src="app/ios-frame.jsx?v=4"></script>
+<script type="text/babel" src="app/ui.jsx?v=4"></script>
+<script type="text/babel" src="app/owner.jsx?v=4"></script>
+<script type="text/babel" src="app/employee.jsx?v=4"></script>
+<script type="text/babel" src="app/manager.jsx?v=4"></script>
 
 <!-- OS layer (JSX) -->
-<script type="text/babel" src="os/modules.jsx"></script>
-<script type="text/babel" src="os/modules2.jsx"></script>
-<script type="text/babel" src="os/modules3.jsx"></script>
-<script type="text/babel" src="os/modules4.jsx"></script>
-<script type="text/babel" src="os/modules5.jsx"></script>
-<script type="text/babel" src="os/modules6.jsx"></script>
-<script type="text/babel" src="os/help.jsx"></script>
-<script src="os/ai-agent.jsx"></script>
-<script type="text/babel" src="os/auth.jsx"></script>
-<script type="text/babel" src="os/shell.jsx"></script>
-<script type="text/babel" src="os/root.jsx"></script>
+<script type="text/babel" src="os/modules.jsx?v=4"></script>
+<script type="text/babel" src="os/modules2.jsx?v=4"></script>
+<script type="text/babel" src="os/modules3.jsx?v=4"></script>
+<script type="text/babel" src="os/modules4.jsx?v=4"></script>
+<script type="text/babel" src="os/modules5.jsx?v=4"></script>
+<script type="text/babel" src="os/modules6.jsx?v=4"></script>
+<script type="text/babel" src="os/help.jsx?v=4"></script>
+<script src="os/ai-agent.jsx?v=4"></script>
+<script type="text/babel" src="os/auth.jsx?v=4"></script>
+<script type="text/babel" src="os/shell.jsx?v=4"></script>
+<script type="text/babel" src="os/root.jsx?v=4"></script>
 
 <script type="text/babel" data-presets="react">
   // ---- PWA: capture install prompt + register service worker ----
@@ -58,7 +58,14 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.deferredPrompt = e; window.__pwaState = 'ready'; window.dispatchEvent(new Event('pwa-installable')); });
     window.addEventListener('appinstalled', function () { window.__pwaState = 'done'; window.dispatchEvent(new Event('pwa-installed')); });
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* sandbox/file context may block SW — fine */ }); });
+      // Unregister old service workers and clear Babel's JSX cache before re-registering
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+      });
+      try {
+        Object.keys(localStorage).filter(function (k) { return k.startsWith('babel-'); }).forEach(function (k) { localStorage.removeItem(k); });
+      } catch (e) {}
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
     }
   })();
 
