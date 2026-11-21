@@ -42,10 +42,19 @@ test('Graph rejects missing corporate configuration and caller-controlled item I
   const s=createStore('a'.repeat(30),env,async()=>{throw Error('no request should be sent')});
   await assert.rejects(()=>s.edit({id:'https://attacker',etag:'abcd',code:'203'},principal));
 });
-test('GET returns only private SharePoint rows; UPDATE uses If-Match',async()=>{
-  let seenPatch=false, patchedBody=null;
-  const fetchImpl=async(url,opts)=>{
-    if(url.includes('5555-6666'))return listResp([{id:'17',eTag:'"period-1"',fields:{PeriodKey:'2026-11',Status:'DRAFT'}}]);
+test('GET returns private SharePoint rows; all writes take and release period CAS lock',async()=>{
+  let version=1,lock='', seenPatch=false, patchedBody=null;
+  const periods=()=>listResp([{id:'17',eTag:`"period-${version}"`,fields:{PeriodKey:'2026-11',Status:'DRAFT',MutationLock:lock}}]);
+  const fetchImpl=async(url,opts={})=>{
+    const method=opts.method||'GET';
+    if(url.includes('5555-6666')){
+      if(method==='PATCH'){
+        assert.equal(opts.headers['If-Match'],`"period-${version}"`);
+        const f=JSON.parse(opts.body);if('MutationLock'in f)lock=f.MutationLock;
+        version++;return {ok:true,status:200,json:async()=>({})};
+      }
+      return periods();
+    }
     if(url.includes('1111-2222'))return listResp([{id:'100',fields:{EmployeeKey:'E1',DisplayName:'Synthetic Employee',Active:true}}]);
     if(url.includes('3333-4444')&&url.includes('/items?'))return listResp([{id:'56',eTag:'"etag-1"',fields:{EmployeeKey:'E1',ShiftDate:'2026-11-20T00:00:00Z',ShiftCode:'217'}}]);
     if(url.endsWith('/items/56?$expand=fields'))return {ok:true,status:200,json:async()=>({id:'56',eTag:'"etag-1"',fields:{ShiftDate:'2026-11-20T00:00:00Z'}})};
@@ -56,6 +65,7 @@ test('GET returns only private SharePoint rows; UPDATE uses If-Match',async()=>{
   const r=await store.roster('2026-11');assert.equal(r.employees.length,1);assert.equal(r.shifts.length,1);
   assert.equal((await store.edit({id:'56',etag:'"etag-1"',code:'203'},principal)).ok,true);
   assert(seenPatch);assert.equal(patchedBody.ShiftCode,'203');assert.equal(patchedBody.LastEditorOid,oid);
+  assert.equal(lock,'');assert.equal(version,3);
 });
 test('stale edit fails without overwriting',async()=>{
   const s=createStore('a'.repeat(30),env,async()=>({ok:true,status:200,json:async()=>({id:'8',eTag:'"new"',fields:{ShiftDate:'2026-11-20'}})}));

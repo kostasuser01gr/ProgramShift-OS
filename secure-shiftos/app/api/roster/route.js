@@ -1,12 +1,13 @@
 import {NextResponse} from 'next/server';
 import {requireActor} from '../../../lib/auth.js';
 import {createStore,GraphFailure,EditConflict} from '../../../lib/graph.mjs';
+import {MonthLocked} from '../../../lib/month-lock.mjs';
 import {isMonth,isSameOrigin,noCacheHeaders} from '../../../lib/access.mjs';
 import {reviewWarnings,CODE_TO_SHIFT} from '../../../lib/shifts.mjs';
 import {reviewWeeklyRest} from '../../../lib/weekly-rest.mjs';
 export const dynamic='force-dynamic';export const runtime='nodejs';
 const json=(x,status=200)=>NextResponse.json(x,{status,headers:noCacheHeaders()});
-const fail=e=>e instanceof EditConflict?json({error:'Η εγγραφή άλλαξε από άλλον editor. Ανανέωσε τη σελίδα.'},409):json({error:'Operation unavailable'},e instanceof GraphFailure?e.status:503);
+const fail=e=>e instanceof EditConflict?json({error:'Η εγγραφή άλλαξε από άλλον editor. Ανανέωσε τη σελίδα.'},409):e instanceof MonthLocked?json({error:'Περίοδος δεσμευμένη. Επικοινώνησε με προϊστάμενο ή IT.'},423):json({error:'Operation unavailable'},e instanceof GraphFailure?e.status:503);
 export async function GET(req){
   const a=await requireActor(req,'read');if(!a.ok)return json({error:'Access denied'},a.status);
   const month=new URL(req.url).searchParams.get('month')||new Date().toISOString().slice(0,7);

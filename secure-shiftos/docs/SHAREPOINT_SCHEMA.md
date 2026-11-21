@@ -17,6 +17,7 @@ Configure these SharePoint lists and **exact internal column names** (created on
 | Periods | PeriodKey | Single line text | **Unique enforced**, `YYYY-MM` |
 | Periods | Status | Choice or single line text | DRAFT, REVIEW, PUBLISHED, LOCKED |
 | Periods | ReviewedBy | Single line text | Optional |
+| Periods | MutationLock | Single line text | Optional column, initially blank. CAS lock for all writes and publish; must be cleared only by audited administrator after crash |
 
 A period item must exist for each month, initially `DRAFT`. Editors cannot create a period via the app. Import every expected employee/day shift row in a supervised migration, using exact source data and a dry-run report. Each list must keep SharePoint item version history. Grant no direct access to the station identity. Grant app access with least privilege via delegated Graph Sites.Selected and a selected-site permission; confirm Microsoft Graph API semantics with the tenant admin.
 

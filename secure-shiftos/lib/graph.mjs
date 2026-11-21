@@ -3,6 +3,8 @@ import {CODE_TO_SHIFT} from './shifts.mjs';
 import {canEditPeriod,validateTransition} from './periods.mjs';
 import {reviewWarnings} from './shifts.mjs';
 import {reviewWeeklyRest} from './weekly-rest.mjs';
+import {withMonthLock,MonthLocked} from './month-lock.mjs';
+import {validateRelease,ReleaseRejected} from './release-gates.mjs';
 export class GraphFailure extends Error{constructor(status=503){super('Corporate Microsoft 365 store unavailable');this.status=status;}}
 export class EditConflict extends Error{constructor(){super('Concurrent change. Reload the roster.');this.status=409;}}
 function required(env){
@@ -46,7 +48,7 @@ export function createStore(token,env=process.env,fetchImpl=fetch){
     if(match.length!==1)return {month,status:'UNCONFIGURED',id:null,etag:null};
     const x=match[0],status=String(x.fields?.Status||'');
     if(!['DRAFT','REVIEW','PUBLISHED','LOCKED'].includes(status)||!tag(x))throw new GraphFailure();
-    return {month,status,id:String(x.id),etag:tag(x),reviewedBy:String(x.fields?.ReviewedBy||'')};
+    return {month,status,id:String(x.id),etag:tag(x),reviewedBy:String(x.fields?.ReviewedBy||''),mutationLock:String(x.fields?.MutationLock||'')};
   }
   async function roster(month){
     if(!isMonth(month))throw new GraphFailure(400);
@@ -58,11 +60,10 @@ export function createStore(token,env=process.env,fetchImpl=fetch){
     if(context.some(s=>!/^\d+$/.test(s.id)||!s.etag))throw new GraphFailure();
     return {month,employees,shifts:context.filter(x=>x.date.startsWith(month)),context,period,updatedAt:new Date().toISOString()};
   }
-  async function editableMonth(month){
-    const period=await getPeriod(month);
-    if(!canEditPeriod(period.status))throw new GraphFailure(423);
-    return period;
-  }
+  const patchPeriod=(id,etag,fields)=>request(urls.periods+'/'+id+'/fields',{
+    method:'PATCH',headers:{'Content-Type':'application/json','If-Match':etag},body:JSON.stringify(fields)
+  });
+  const mutate=(month,work)=>withMonthLock({read:getPeriod,patch:patchPeriod},month,work);
   async function edit(input,actor){
     const id=String(input?.id||''),etag=input?.etag,code=input?.code;
     if(!/^[1-9]\d{0,18}$/.test(id)||typeof etag!=='string'||etag.length<3||etag.length>250||etag==='*'||typeof code!=='string'||(code!==''&&!Object.hasOwn(CODE_TO_SHIFT,code)))throw new GraphFailure(400);
@@ -70,39 +71,45 @@ export function createStore(token,env=process.env,fetchImpl=fetch){
     if(String(previous.id)!==id||!previous.fields||tag(previous)!==etag)throw new EditConflict();
     const date=String(previous.fields.ShiftDate||'').slice(0,10);
     if(!isDate(date))throw new GraphFailure();
-    await editableMonth(date.slice(0,7));
-    await request(path+'/fields',{method:'PATCH',headers:{'Content-Type':'application/json','If-Match':etag},body:JSON.stringify({ShiftCode:code,LastEditorOid:actor.oid})});
-    return {ok:true};
+    return mutate(date.slice(0,7),async(period)=>{
+      if(!canEditPeriod(period.status))throw new GraphFailure(423);
+      // Recheck after acquiring lock in case another manager edited the row.
+      const latest=await request(path+'?$expand=fields');
+      if(tag(latest)!==etag||String(latest.fields?.ShiftDate||'').slice(0,10)!==date)throw new EditConflict();
+      await request(path+'/fields',{method:'PATCH',headers:{'Content-Type':'application/json','If-Match':etag},body:JSON.stringify({ShiftCode:code,LastEditorOid:actor.oid})});
+      return {ok:true};
+    });
   }
   async function addShift(input,actor){
     const key=String(input?.employeeKey||''),date=String(input?.date||''),code=input?.code;
     if(!/^[\w-]{1,80}$/.test(key)||!isDate(date)||typeof code!=='string'||(code!==''&&!Object.hasOwn(CODE_TO_SHIFT,code)))throw new GraphFailure(400);
-    const known=await pages(urls.employees);
-    if(!known.some(e=>String(e.fields?.EmployeeKey||'')===key&&String(e.fields?.Active).toLowerCase()==='true'))throw new GraphFailure(400);
-    await editableMonth(date.slice(0,7));
-    const fields={Title:key+'|'+date,ShiftKey:key+'|'+date,EmployeeKey:key,ShiftDate:date,ShiftCode:code,LastEditorOid:actor.oid};
-    const created=await request(urls.shifts,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    return {ok:true,id:String(created.id)};
+    return mutate(date.slice(0,7),async(period)=>{
+      if(!canEditPeriod(period.status))throw new GraphFailure(423);
+      const [known,existing]=await Promise.all([pages(urls.employees),pages(urls.shifts)]);
+      if(!known.some(e=>String(e.fields?.EmployeeKey||'')===key&&String(e.fields?.Active).toLowerCase()==='true'))throw new GraphFailure(400);
+      if(existing.some(s=>String(s.fields?.ShiftKey||'')===key+'|'+date))throw new EditConflict();
+      const fields={Title:key+'|'+date,ShiftKey:key+'|'+date,EmployeeKey:key,ShiftDate:date,ShiftCode:code,LastEditorOid:actor.oid};
+      const created=await request(urls.shifts,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+      return {ok:true,id:String(created.id)};
+    });
   }
   async function changePeriod(input,actor){
     const month=String(input?.month||''),next=String(input?.next||''),etag=String(input?.etag||'');
     if(!isMonth(month)||!/^.{3,250}$/.test(etag)||etag==='*')throw new GraphFailure(400);
-    const period=await getPeriod(month);
-    if(!period.id||period.etag!==etag)throw new EditConflict();
-    validateTransition(period.status,next,{reviewed:input?.reviewed===true});
-    if(next==='PUBLISHED'){
-      const current=await roster(month);
-      const needed=new Date(+month.slice(0,4),+month.slice(5),0).getDate();
-      const active=current.employees.length;
-      const keySet=new Set(current.shifts.filter(x=>x.code!=='').map(x=>x.employeeKey+'|'+x.date));
-      if(!active||keySet.size!==active*needed)throw new GraphFailure(422);
-      const alerts=[...reviewWarnings(current.context,current.employees),...reviewWeeklyRest(current.context,current.employees)];
-      if(alerts.some(x=>x.date.startsWith(month)))throw new GraphFailure(422);
-    }
-    // Management is explicitly required for period changes; contributors may not publish.
-    const path=urls.periods+'/'+period.id+'/fields';
-    await request(path,{method:'PATCH',headers:{'Content-Type':'application/json','If-Match':etag},body:JSON.stringify({Status:next,ReviewedBy:next==='REVIEW'||next==='PUBLISHED'?actor.oid:period.reviewedBy})});
-    return {ok:true,status:next};
+    return mutate(month,async(period)=>{
+      // Compare client-visible revision to pre-acquisition revision; lock itself changes the ETag.
+      if(period._beforeLockEtag!==etag)throw new EditConflict();
+      validateTransition(period.status,next,{reviewed:input?.reviewed===true});
+      if(next==='PUBLISHED'){
+        const current=await roster(month);
+        validateRelease(current,env);
+      }
+      await patchPeriod(period.id,period.etag,{
+        Status:next,
+        ReviewedBy:next==='REVIEW'||next==='PUBLISHED'?actor.oid:period.reviewedBy
+      });
+      return {ok:true,status:next};
+    });
   }
   return {roster,edit,addShift,getPeriod,changePeriod};
 }
