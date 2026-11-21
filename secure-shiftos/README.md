@@ -1,6 +1,16 @@
-# Europcar ShiftOS — Secure Web 0.6 (preproduction)
+# Europcar ShiftOS — Premium Control Center 0.7 (preproduction)
 
 This project replaces daily Excel editing with a restricted Microsoft 365 web workspace. **Only use with real employee data after corporate IT approval, access verification and approved commercial hosting.** The publicly reviewable demo uses fictional names, fake IDs and in-browser ephemeral data only.
+
+## Premium UI v0.7 (new)
+
+- Premium responsive control center for both authenticated managers/editors and synthetic reviewer mode.
+- Operational overview with coverage summaries, KPI metrics and day-by-day planner.
+- Monthly and rolling seven-day roster views; staff search, shift-class filtering, keyboard search shortcut (`/` or `Ctrl/Cmd+K`).
+- Dedicated coverage inspector: real instance reports actual staffing only; synthetic preview includes an explicitly adjustable demo-only threshold.
+- Expanded release workflow, explicit privacy labels, incident/validation insights, and demo-only undo/activity history.
+- Pure deterministic analytics helpers, defensive date handling, synthetic fixture generation and regression tests.
+- **No production data added**, no new dependencies, no price-plan changes and no corporate permission changes.
 
 ## Implemented
 

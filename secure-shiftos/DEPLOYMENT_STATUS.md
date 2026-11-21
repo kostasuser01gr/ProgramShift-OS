@@ -1,7 +1,10 @@
-# Deployment status (release v0.6)
+# ShiftOS 0.7 deployment status
 
-- **Source**: local generated code and tests. No real employee data in source.
-- **Environment**: release gates disabled. Corporate Entra/SharePoint credentials not supplied.
-- **Production**: NOT READY and MUST remain disabled.
-- **Preview**: only synthetic demo allowed, through Vercel Authentication if compatible with account permissions.
-- **Tests**: `npm test`; syntax parser `npm run lint:syntax`; live Next build remains unverified without npm dependencies.
+- Changes are staged as a separate GitHub branch. Not approved for corporate production.
+- Vercel preview must remain protected by Vercel Authentication and synthetic-only.
+- Microsoft Entra, private SharePoint lists and corporate user allowlist remain UNCONFIGURED.
+- No real employee data are in the repository or synthetic demo.
+- Source OneDrive Excel and its old sharing links remain untouched.
+- Existing live application remains paused.
+- Validate Vercel build state and preview authentication before calling staging complete.
+- Tests: `npm test`, `npm run lint:syntax`; production preflight must reject unapproved settings.
