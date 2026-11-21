@@ -48,3 +48,11 @@ npm run build
 The Entra registration, corporate site, list schema, secrets, permissions, full source workbook import, original Sophia workbook equivalence, real co-edit two-user test and automatic durable recovery are NOT in place. The application cannot be considered production-ready until independently checked. Existing OneDrive workbook remains unchanged, with insecure older sharing links still requiring authorized cleanup. **The new app does not automatically secure the old workbook.**
 
 The Graph backend currently enumerates lists with bounded pagination and supports ~9k items/list; for growth, add indexed date filters and server-side paging. Period transition and shift editing are separate Graph operations; absolute transactional freeze requires a stronger storage/serialization strategy. No self-provisioned accounts, billing changes, real-data migrations or automatic sharing-link revocations are performed.
+
+## V0.9 Security Center and supervised Excel lockdown
+
+The private Manager workspace now includes a read-only **Κέντρο ασφάλειας**. It uses delegated Microsoft Graph read-only calls on `EXCEL_DRIVE_ID`, `EXCEL_FILE_ITEM_ID`, `EXCEL_PARENT_ITEM_ID` and reports broad sharing links, inherited folder exposure, and shared-account caveats. It does not mutate email grantees or ACLs, does not declare the workbook locked without independent testing, and does not send backup passwords to the audit API. The access audit may return UNVERIFIED until corporate IT provides delegated Graph permission and object identities.
+
+For confidentiality with uninterrupted co-authoring, use named-user access/SharePoint permissions and (if licensed/IT enabled) a Purview encrypted sensitivity label that supports coauthoring. A regular Excel *file open* password normally prevents coauthoring; Excel *Protect Sheet* is not confidentiality. The original workbook and its versions are not changed by this release. Managers choose the separate encrypted backup passphrase, which is never committed.
+
+Published code and demo include **only synthetic data**. Corporate OneDrive access changes require an authorized owner in Microsoft 365 → Manage access; no connector action for revoking links is available here.

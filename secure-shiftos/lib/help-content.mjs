@@ -14,6 +14,7 @@ export const HELP_TOPICS = Object.freeze({
   access: {title:'Πρόσβαση και ταυτοποίηση',short:'Ατομική εταιρική σύνδεση, όχι κοινός κωδικός.',detail:'Η πραγματική εφαρμογή ελέγχει την ταυτότητα και τη ρητή έγκριση χρήστη στον server. Ένα tooltip, κρυφό φύλλο ή γενικός κωδικός Excel δεν προστατεύει εμπιστευτικά δεδομένα.',connects:['release','backup']},
   commands: {title:'Γρήγορες εντολές',short:'Συντομεύσεις πληκτρολογίου.',detail:'⌘K / Ctrl+K ανοίγει το μενού εντολών στο demo, το / οδηγεί στην αναζήτηση και το ? ανοίγει τον οδηγό όταν δεν γράφεις σε πεδίο.',connects:['search','overview']},
   audit: {title:'Ιστορικό ενεργειών',short:'Ποιος άλλαξε τι και πότε.',detail:'Στο demo το ιστορικό υπάρχει μόνο στη μνήμη της τρέχουσας σελίδας. Για πραγματική χρήση απαιτείται αμετάβλητο server-side audit log.',connects:['schedule','release']},
+  security: {title:'Κέντρο ασφάλειας Excel',short:'Ζωντανή εικόνα δικαιωμάτων και σύνδεσμοι πρόσβασης.',detail:'Η εφαρμογή επιθεωρεί read-only τα δικαιώματα αρχείου και γονικού φακέλου. Αν υπάρχουν ευρείς ή ανώνυμοι σύνδεσμοι, δεν χαρακτηρίζει το αρχείο ιδιωτικό. Ο κωδικός backup είναι διαφορετικός από την πρόσβαση στο κύριο Excel. Τα υπάρχοντα email δεν τροποποιούνται.',connects:['access','backup','release']},
   demo: {title:'Δοκιμαστικό περιβάλλον',short:'Ασφαλής προσομοίωση χωρίς προσωπικά δεδομένα.',detail:'Οι εργαζόμενοι είναι φανταστικοί, οι αλλαγές δεν αποθηκεύονται στη Microsoft και δεν παράγονται πραγματικά backups.',connects:['overview','schedule']},
 });
 
@@ -24,6 +25,7 @@ export const GUIDE_STEPS = Object.freeze([
   {id:'capacity',title:'Δες την κάλυψη',topic:'coverage',section:'coverage',text:'Η αλλαγή βάρδιας ενημερώνει τον πίνακα κάλυψης. Διάλεξε ημέρα για ανάλυση.',task:'Άνοιξε την Κάλυψη σταθμού.'},
   {id:'validate',title:'Έλεγξε τα CHECK',topic:'checks',section:'checks',text:'Δες άγνωστους κωδικούς, κενά και προειδοποιήσεις ανάπαυσης πριν από την έγκριση.',task:'Άνοιξε τους Ελέγχους CHECK.'},
   {id:'publish',title:'Κατανόησε τη δημοσίευση',topic:'stage',section:'release',text:'Η πορεία DRAFT → REVIEW → PUBLISHED → LOCKED έχει κανόνες και δεν αλλάζει αυτόματα τα δικαιώματα των εργαζομένων.',task:'Άνοιξε τη Δημοσίευση.'},
+  {id:'security',title:'Έλεγξε ποιος μπορεί να δει το αρχείο',topic:'security',section:'security',text:'Έλεγξε σύνδεσμο αρχείου, δικαιώματα γονικού φακέλου και πρόσβαση μέσω κοινούχρηστου λογαριασμού. Μην συγχέεις τον κωδικό backup με το κλείδωμα του Excel.',task:'Άνοιξε το Κέντρο ασφάλειας.'},
   {id:'restore',title:'Διατήρησε ασφαλές αντίγραφο',topic:'backup',section:'backup',text:'Το Excel είναι κρυπτογραφημένο backup. Το demo δεν μπορεί να εξαγάγει αληθινά αρχεία ή να συνδεθεί με Microsoft 365.',task:'Άνοιξε την ενότητα Excel Backup.'},
 ]);
 
@@ -32,6 +34,7 @@ export const CONNECTIONS = Object.freeze([
   {id:'coverage',label:'Κάλυψη',desc:'Αριθμός βαρδιών ανά ημέρα'},
   {id:'checks',label:'CHECK',desc:'Προειδοποιήσεις / εγκυρότητα'},
   {id:'release',label:'Έγκριση',desc:'DRAFT → REVIEW → PUBLISHED'},
+  {id:'security',label:'Security Center',desc:'Read-only ACL audit & verification'},
   {id:'backup',label:'Excel Backup',desc:'Κρυπτογραφημένο αντίγραφο'},
 ]);
 
@@ -43,5 +46,5 @@ export function nextStep(index,delta){return Math.max(0,Math.min(GUIDE_STEPS.len
 export function sectionForTopic(topic){
  const aliases={codes:'schedule',search:'schedule',period:'schedule',stage:'release',rest:'checks',demo:'overview',audit:'release',access:'overview',commands:'overview'};
  const section=aliases[topic]||topic;
- return ['overview','schedule','coverage','checks','release','backup'].includes(section)?section:'overview';
+ return ['overview','schedule','coverage','checks','release','backup','security'].includes(section)?section:'overview';
 }
