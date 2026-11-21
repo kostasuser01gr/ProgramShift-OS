@@ -1,3 +1,12 @@
+# V0.8 rollout status
+
+- Feature branch: `feature/shiftos-premium-v08`
+- Hosting: existing `shiftos-secure-preview`, Vercel Authentication on all deployments
+- Production cutover: not authorized, not performed
+- Company roster import: not performed
+- Pay-as-you-go activation: not performed
+- Scope: Greek onboarding, tooltips, information architecture and accessibility improvements, synthetic preview only
+
 # ShiftOS 0.7 deployment status
 
 - Changes are staged as a separate GitHub branch. Not approved for corporate production.

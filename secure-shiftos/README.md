@@ -1,3 +1,9 @@
+## V0.8 — ελληνικό διαδραστικό tutorial
+
+Προστέθηκαν μικρά εργαλεία `?` με hover/focus/tap σε βασικές λειτουργίες, ξεναγός 7 βημάτων, λεξικό με άτονη αναζήτηση, χάρτης ροής δεδομένων, γρήγορη μετάβαση και checklist εξοικείωσης. Διαβάστε `docs/GREEK_TUTORIAL_V08.md`.
+
+**Επιχειρησιακός περιορισμός:** καμία αλλαγή σε πραγματικό roster, SharePoint, εταιρικούς ρόλους ή ενεργά projects. Η έκδοση παραμένει προστατευμένο staging preview με συνθετικά δεδομένα μέχρι να εγκριθεί νόμιμη επιχειρησιακή φιλοξενία και ολοκληρωθεί η ταυτοποίηση.
+
 # Europcar ShiftOS — Premium Control Center 0.7 (preproduction)
 
 This project replaces daily Excel editing with a restricted Microsoft 365 web workspace. **Only use with real employee data after corporate IT approval, access verification and approved commercial hosting.** The publicly reviewable demo uses fictional names, fake IDs and in-browser ephemeral data only.
