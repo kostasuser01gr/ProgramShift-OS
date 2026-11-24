@@ -1,3 +1,13 @@
+## Latest candidate — v1.1 RC1
+
+- Source: `feature/shiftos-operations-v11` (new, isolated candidate).
+- Tests: 67/67 local Node tests; 36 JavaScript/JSX syntax checks (as of 2026-11-24).
+- Browser E2E: not yet verified. Full Vercel deployment status must be recorded after build, not assumed.
+- Company data: none introduced. Preview remains synthetic and protected.
+- Production: NO-GO pending IT approval, private SharePoint, identity, access-list remediation and commercial hosting.
+
+---
+
 # V0.8 rollout status
 
 - Feature branch: `feature/shiftos-premium-v08`

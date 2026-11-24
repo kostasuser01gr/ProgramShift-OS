@@ -1,3 +1,9 @@
+# ShiftOS v1.1 RC1 — Operations Intelligence (protected preview)
+
+New read-only business features: Operations Simulator, 4-stage Workflow Center, Decision Inbox and simplified task launcher. Both synthetic demo and authenticated UI can access them. No customer records, automated publication or extra services. The production release remains blocked; review `docs/OPERATIONS_INTELLIGENCE_V11.md` for evidence, assumptions, tests and deferred integrations. Original Excel and existing Microsoft 365 email grants are unchanged.
+
+---
+
 ## V0.8 — ελληνικό διαδραστικό tutorial
 
 Προστέθηκαν μικρά εργαλεία `?` με hover/focus/tap σε βασικές λειτουργίες, ξεναγός 7 βημάτων, λεξικό με άτονη αναζήτηση, χάρτης ροής δεδομένων, γρήγορη μετάβαση και checklist εξοικείωσης. Διαβάστε `docs/GREEK_TUTORIAL_V08.md`.
