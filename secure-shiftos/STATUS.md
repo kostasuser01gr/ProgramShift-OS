@@ -1,3 +1,5 @@
+# v1.4 Release Candidate — Instrumental Motion
+
 ## v1.1 RC1 candidate (2026-11-24)
 
 UI / Features: Operations Simulator, Workflow Center and Decision Inbox in both authenticated and synthetic views.

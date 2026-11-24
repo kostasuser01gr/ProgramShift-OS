@@ -1,3 +1,7 @@
+# V1.4 — Instrumental Rental Operations Motion
+
+Adds purpose-driven Motion transitions to task workflows, snapshot-only operational telemetry and a reusable project agent motion skill. No real-time claim or staffing target is inferred. See `docs/INSTRUMENTAL_MOTION_V14.md` and `skills/shiftos-motion/SKILL.md`. Preview remains synthetic/noncommercial; corporate SharePoint writes remain disabled.
+
 # ShiftOS V1.3 RC1 — Rental Station Workflows
 
 Added real company-scoped, approval-gated rental operations task write support. See [docs/RENTAL_OPERATIONS_V13.md](docs/RENTAL_OPERATIONS_V13.md). The corporate feature is intentionally unavailable without approved Microsoft 365 permissions, a private task list and `OPS_WRITE_ENABLED=true`. Vercel preview is synthetic and noncommercial.

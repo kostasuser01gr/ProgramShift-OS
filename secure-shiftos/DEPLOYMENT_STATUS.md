@@ -1,3 +1,7 @@
+# v1.4.0 RC1 — UNVERIFIED BUILD UNTIL REMOTE CI
+Motion + data-grounded instrument panel, no production writes, no company data.
+Previous V1.3 rollback commit: ace1a74a6a8afe9db49f57b9077e00852d1c98a8.
+
 # ShiftOS V1.3 RC1 — Rental Operations WRITE workflows
 
 ## Staging status
