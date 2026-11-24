@@ -62,3 +62,7 @@ The private Manager workspace now includes a read-only **Κέντρο ασφάλ
 For confidentiality with uninterrupted co-authoring, use named-user access/SharePoint permissions and (if licensed/IT enabled) a Purview encrypted sensitivity label that supports coauthoring. A regular Excel *file open* password normally prevents coauthoring; Excel *Protect Sheet* is not confidentiality. The original workbook and its versions are not changed by this release. Managers choose the separate encrypted backup passphrase, which is never committed.
 
 Published code and demo include **only synthetic data**. Corporate OneDrive access changes require an authorized owner in Microsoft 365 → Manage access; no connector action for revoking links is available here.
+
+## V1.2 — Integration Hub, CLI, TUI, HTTP and synthetic MCP
+
+The new Operations Hub (`hub` tab) offers a Greek action board, seven read-only analysis/proposal tools, and guided workflow instructions. All interfaces share the deterministic `lib/gateway/core.mjs` tool registry. `app/api/gateway/route.js` is individually authenticated with existing Entra/SharePoint permissions and fails closed when corporate configuration is missing. The CLI, terminal menu and MCP stdio server require `--demo` and use only synthetic rosters. **No real AI agent, persistent approvals, corporate manual search, durable audit or multi-site Graph sync has been added.** See `docs/BITEFOUNDRY_GATEWAY_V12.md` for architecture, commands, safeguards, known gaps and rollback.
