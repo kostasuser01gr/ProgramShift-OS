@@ -11,5 +11,9 @@ if(!/^[0-9a-f-]{36}(,[0-9a-f-]{36})*$/i.test(process.env.BLOCKED_OIDS||''))error
 for(const id of (process.env.BLOCKED_OIDS||'').split(',').map(x=>x.trim().toLowerCase())) {
   if((process.env.MANAGER_OIDS||'').toLowerCase().split(',').includes(id) || (process.env.EDITOR_OIDS||'').toLowerCase().split(',').includes(id)) errors.push('Shared account cannot be an authorized editor');
 }
+if(process.env.OPS_WRITE_ENABLED==='true'){
+  for(const key of ['SHAREPOINT_OPERATIONS_LIST_ID','OPS_STATION_ID'])if(!process.env[key])errors.push(`${key}: required for rental operations writes`);
+  if(!/^[A-Z0-9_-]{2,24}$/.test(process.env.OPS_STATION_ID||''))errors.push('OPS_STATION_ID: invalid');
+}
 if(errors.length){console.error('PRODUCTION RELEASE BLOCKED:',errors.join(' | '));process.exitCode=1;}
 else console.log('Static configuration prerequisites satisfied. Live IT, Graph permissions, co-authoring and privacy audits still required.');

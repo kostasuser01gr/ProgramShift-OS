@@ -1,7 +1,17 @@
-# ShiftOS v1.2.0-rc1 — PREVIEW ONLY
+# ShiftOS V1.3 RC1 — Rental Operations WRITE workflows
 
-Baseline: `feature/shiftos-operations-v11`, commit `313223f01c270aa8a5aafc1cbcd2a3cc745d8b73`.
+## Staging status
+- Branch: `feature/shiftos-rental-operations-v13` (not merged to main).
+- Current baseline/rollback: V1.2 commit `5595bd704ac39144cebcea02c3e1099a4c0b337c`.
+- V1.3 adds operations domain, actual authenticated corporate create/transition API, Graph ETag concurrency, station-scoped task board, manager verification, Greek help and tests.
+- Only synthetic demo is allowed on the current Vercel Hobby preview; **corporate write mode disabled by default**. No real staff/customer data.
+- No paid services or backend databases added.
 
-New: one read-only domain kernel, `/api/gateway` corporate-authenticated adapter, synthetic-only CLI/TUI/MCP, Greek Integration Hub, deterministic 7-tool catalog, contextual guide update, regression tests.
+## Hard gates
+- IT permission grants, private SharePoint site/list, company hosting entitlement, station scope and `OPS_WRITE_ENABLED=true` are missing, so corporate operations remain blocked.
+- Original confidential ΠΡΟΓΡΑΜΜΑ.xlsx still has sharing exposure; app writes do not alter that file or its email grantees.
+- Team-specific/employee permissions, persistent independent append-only audit and per-station delegated SharePoint ACLs require company validation.
+- Live two-editor, production auth and UI E2E tests are NOT completed.
 
-No corporate production release. Original OneDrive XLSX, user permissions and email recipients untouched. No SaaS purchases or new cloud databases. Synthetic preview must retain Vercel Authentication and no corporate secrets. Protected preview build and browser verification are separate gates.
+## Tests
+Run `npm test`, `npm run lint:syntax`, and `npm run preflight`. `preflight` is expected to fail without corporate approvals. Build verification is separate.

@@ -1,3 +1,7 @@
+# ShiftOS V1.3 RC1 — Rental Station Workflows
+
+Added real company-scoped, approval-gated rental operations task write support. See [docs/RENTAL_OPERATIONS_V13.md](docs/RENTAL_OPERATIONS_V13.md). The corporate feature is intentionally unavailable without approved Microsoft 365 permissions, a private task list and `OPS_WRITE_ENABLED=true`. Vercel preview is synthetic and noncommercial.
+
 # ShiftOS v1.1 RC1 — Operations Intelligence (protected preview)
 
 New read-only business features: Operations Simulator, 4-stage Workflow Center, Decision Inbox and simplified task launcher. Both synthetic demo and authenticated UI can access them. No customer records, automated publication or extra services. The production release remains blocked; review `docs/OPERATIONS_INTELLIGENCE_V11.md` for evidence, assumptions, tests and deferred integrations. Original Excel and existing Microsoft 365 email grants are unchanged.

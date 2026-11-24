@@ -15,6 +15,7 @@ export const HELP_TOPICS = Object.freeze({
   commands: {title:'Γρήγορες εντολές',short:'Συντομεύσεις πληκτρολογίου.',detail:'⌘K / Ctrl+K ανοίγει το μενού εντολών στο demo, το / οδηγεί στην αναζήτηση και το ? ανοίγει τον οδηγό όταν δεν γράφεις σε πεδίο.',connects:['search','overview']},
   audit: {title:'Ιστορικό ενεργειών',short:'Ποιος άλλαξε τι και πότε.',detail:'Στο demo το ιστορικό υπάρχει μόνο στη μνήμη της τρέχουσας σελίδας. Για πραγματική χρήση απαιτείται αμετάβλητο server-side audit log.',connects:['schedule','release']},
   lab: {title:'Προσομοίωση φόρτου',short:'Δοκιμή υποθετικών παραδόσεων και επιστροφών.',detail:'Άλλαξε τις χειροκίνητες παραδοχές και δες την επίδραση σε τρεις ζώνες. Η ανάλυση δεν συνδέεται με πραγματικές κρατήσεις, δεν εκτελεί αλλαγές και δεν πιστοποιεί στελέχωση.',connects:['schedule','coverage','flow']},
+  rental: {title:'Εργασίες οχημάτων',short:'Καταχώριση, ολοκλήρωση και επαλήθευση εργασιών σταθμού.',detail:'Οι εργασίες παραδόσεων, επιστροφών, πλυσίματος, shuttle και kiosk αλλάζουν κατάσταση μετά από έλεγχο δικαιωμάτων. Η τελική επαλήθευση γίνεται από manager. Το demo διατηρεί αλλαγές μόνο στη μνήμη. Για εταιρική εγγραφή απαιτείται ιδιωτικό SharePoint και έγκριση IT.',connects:['hub','coverage','flow']},
   hub: {title:'Κέντρο εργασιών',short:'Πίνακας εκκρεμοτήτων και ελεγχόμενων εργαλείων.',detail:'Ενώνει τους ίδιους ελέγχους με read-only εργαλεία, προσομοίωση, προτάσεις χωρίς εγγραφή και εκπαιδευτικές οδηγίες. Δεν στέλνει αιτήματα έγκρισης ούτε δημιουργεί μόνιμο audit.',connects:['schedule','coverage','checks','flow']},
   flow: {title:'Ροές εργασίας',short:'Οδηγός τεσσάρων σταδίων για υπευθύνους.',detail:'Οπτική καθοδήγηση: Πρόγραμμα, Έλεγχος, Έγκριση, Backup. Η πλοήγηση δεν εκτελεί αυτόματα ή μη εγκεκριμένες ενέργειες.',connects:['schedule','checks','release','backup']},
   security: {title:'Κέντρο ασφάλειας Excel',short:'Ζωντανή εικόνα δικαιωμάτων και σύνδεσμοι πρόσβασης.',detail:'Η εφαρμογή επιθεωρεί read-only τα δικαιώματα αρχείου και γονικού φακέλου. Αν υπάρχουν ευρείς ή ανώνυμοι σύνδεσμοι, δεν χαρακτηρίζει το αρχείο ιδιωτικό. Ο κωδικός backup είναι διαφορετικός από την πρόσβαση στο κύριο Excel. Τα υπάρχοντα email δεν τροποποιούνται.',connects:['access','backup','release']},
@@ -31,6 +32,7 @@ export const GUIDE_STEPS = Object.freeze([
   {id:'security',title:'Έλεγξε ποιος μπορεί να δει το αρχείο',topic:'security',section:'security',text:'Έλεγξε σύνδεσμο αρχείου, δικαιώματα γονικού φακέλου και πρόσβαση μέσω κοινούχρηστου λογαριασμού. Μην συγχέεις τον κωδικό backup με το κλείδωμα του Excel.',task:'Άνοιξε το Κέντρο ασφάλειας.'},
   {id:'hub',title:'Δες το Κέντρο εργασιών',topic:'hub',section:'hub',text:'Άνοιξε τον πίνακα εκκρεμοτήτων και τα ασφαλή εργαλεία. Η προεπισκόπηση έγκρισης δεν υποβάλλει πραγματικό αίτημα.',task:'Άνοιξε το Κέντρο εργασιών.'},
   {id:'whatif',title:'Δοκίμασε χωρίς να αλλάξεις τίποτα',topic:'lab',section:'lab',text:'Στον προσομοιωτή επιλέγεις υποθετικές παραδόσεις και επιστροφές. Τα αποτελέσματα δεν είναι πρόβλεψη πραγματικών κρατήσεων.',task:'Άνοιξε την Προσομοίωση.'},
+  {id:'rental',title:'Διαχειρίσου τις εργασίες σταθμού',topic:'rental',section:'rental',text:'Δημιούργησε συνθετική εργασία, ανάθεσε ομάδα, ξεκίνα την εκτέλεση, ολοκλήρωσέ την και δοκίμασε τον έλεγχο manager.',task:'Άνοιξε τις Εργασίες οχημάτων.'},
   {id:'workflow',title:'Ακολούθησε τις ροές εργασίας',topic:'flow',section:'flow',text:'Οι τέσσερις φάσεις βοηθούν στην οργάνωση της ημέρας. Κανένα πάτημα δεν δημοσιεύει πρόγραμμα αυτόματα.',task:'Άνοιξε τις Ροές εργασίας.'},
   {id:'restore',title:'Διατήρησε ασφαλές αντίγραφο',topic:'backup',section:'backup',text:'Το Excel είναι κρυπτογραφημένο backup. Το demo δεν μπορεί να εξαγάγει αληθινά αρχεία ή να συνδεθεί με Microsoft 365.',task:'Άνοιξε την ενότητα Excel Backup.'},
 ]);
@@ -41,6 +43,7 @@ export const CONNECTIONS = Object.freeze([
   {id:'checks',label:'CHECK',desc:'Προειδοποιήσεις / εγκυρότητα'},
   {id:'release',label:'Έγκριση',desc:'DRAFT → REVIEW → PUBLISHED'},
   {id:'lab',label:'Προσομοίωση',desc:'Υποθετική εκτίμηση φόρτου'},
+  {id:'rental',label:'Εργασίες οχημάτων',desc:'Δημιουργία και ελεγχόμενη εκτέλεση'},
   {id:'hub',label:'Κέντρο εργασιών',desc:'Αναλύσεις, κανόνες και εργαλεία read-only'},
   {id:'flow',label:'Οδηγός ροής',desc:'Εξήγηση των ελεγχόμενων βημάτων'},
   {id:'security',label:'Security Center',desc:'Read-only ACL audit & verification'},
@@ -55,5 +58,5 @@ export function nextStep(index,delta){return Math.max(0,Math.min(GUIDE_STEPS.len
 export function sectionForTopic(topic){
  const aliases={codes:'schedule',search:'schedule',period:'schedule',stage:'release',rest:'checks',demo:'overview',audit:'release',access:'overview',commands:'overview'};
  const section=aliases[topic]||topic;
- return ['overview','schedule','coverage','checks','release','backup','security','lab','flow','hub'].includes(section)?section:'overview';
+ return ['overview','schedule','coverage','checks','release','backup','security','lab','flow','hub','rental'].includes(section)?section:'overview';
 }
