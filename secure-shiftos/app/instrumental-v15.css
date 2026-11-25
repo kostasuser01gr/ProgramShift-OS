@@ -1,0 +1,105 @@
+/* ShiftOS 1.5 · controlled Instrumental visual system. No remote assets or decorative telemetry. */
+:root{
+  --inst-primitive-950:#0a1012;--inst-primitive-900:#11181b;--inst-primitive-850:#172124;
+  --inst-primitive-800:#1c292c;--inst-primitive-700:#314347;--inst-primitive-500:#93ada9;
+  --inst-primitive-100:#edf5f0;--inst-primitive-amber:#f0be83;--inst-primitive-green:#8fd1a9;
+  --inst-primitive-red:#ecab9d;--inst-primitive-blue:#a5c6dc;
+  --inst-unit:4px;
+}
+.premiumApp{
+  --inst-surface-base:var(--inst-primitive-950);--inst-surface-card:var(--inst-primitive-900);
+  --inst-surface-raised:var(--inst-primitive-850);--inst-line:var(--inst-primitive-700);
+  --inst-foreground:var(--inst-primitive-100);--inst-secondary:var(--inst-primitive-500);
+  --inst-accent:var(--inst-primitive-amber);--inst-success:var(--inst-primitive-green);
+  --inst-danger:var(--inst-primitive-red);--inst-info:var(--inst-primitive-blue);
+  --inst-radius-card:12px;--inst-radius-control:8px;--inst-focus:3px solid #b5ebc5;
+  --inst-motion-fast:140ms;--inst-motion-standard:220ms;--inst-motion-panel:260ms;
+}
+.premiumApp .premiumSidebar{background:#101819;border-color:#293b3c}
+.premiumApp .premiumWorkspace{isolation:isolate}
+.premiumApp .metric{border-color:#334643;border-radius:12px;box-shadow:inset 0 1px 0 #ffffff06}
+.premiumApp .metric:focus-within{border-color:#7eac9a}
+.premiumApp .navButton{transition:background var(--inst-motion-fast) ease,border-color var(--inst-motion-fast) ease}
+.premiumApp .navButton:focus-visible,.premiumApp .shortcutButton:focus-visible{outline:var(--inst-focus);outline-offset:3px}
+.premiumApp .topbar h1{font-weight:760;letter-spacing:-1.5px}
+.premiumApp .topStrip{font-variant-numeric:tabular-nums}
+/* All new instrumentation styles are scoped to the rental work area. */
+.instRoot{--inst-matrix-empty:#1d292c;--inst-heat-low:#2c403e;--inst-heat-mid:#386157;--inst-heat-high:#4a806a;--inst-heat-max:#609d7c;color:var(--inst-foreground)}
+.instRoot :is(h2,h3){text-wrap:balance}
+.instRoot :is(button,input,select):focus-visible{outline:var(--inst-focus);outline-offset:2px}
+.instRoot :is(.ropsHero,.opsPulse,.ropsCreate,.ropsDetail,.ropsLane){box-shadow:inset 0 1px 0 #ffffff08}
+.instRoot .ropsHero{background:linear-gradient(124deg,#141b1d 0%,#1a2426 66%,#1c282a 100%);border-color:#354549}
+.instRoot .ropsHero h2{font-size:clamp(22px,2.5vw,30px);letter-spacing:-.045em}
+.instRoot .ropsHero .eyebrow{color:var(--inst-accent)}
+.instRoot .opsPulse{background:linear-gradient(130deg,#12191c,#1a2628);border-color:#37494a}
+.instRoot .opsPulseEyebrow{color:var(--inst-accent)}
+.instRoot .opsPulseGrid :is(strong,.opsPulseRingValue){font-variant-numeric:tabular-nums}
+.instRoot .ropsPrimary{background:var(--inst-success)!important;color:#102019!important}
+.instContextStrip{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#162225;border:1px solid #32474a;border-radius:10px;color:#bcd1c9;font-size:11px;line-height:1.45}
+.instContextStrip>span:nth-child(2){flex:1;min-width:0}
+.instContextStrip strong{color:#e2f0ea}
+.instContextDot{height:8px;width:8px;border-radius:50%;background:#8bada7;flex:0 0 auto;box-shadow:0 0 0 3px #8bada71e}
+.instContextDot.synthetic,.instContextDot.snapshot{background:var(--inst-success)}
+.instContextDot.stale,.instContextDot.unavailable{background:var(--inst-danger)}
+.instContextDot.refreshing,.instContextDot.loading{background:var(--inst-accent)}
+.instRoot button.instDensityToggle{background:#223132;border-color:#455658;color:#e5f2ec;white-space:nowrap;font-size:11px;min-height:34px}
+.instRoot button.instDensityToggle[aria-pressed="true"]{border-color:var(--inst-accent);color:var(--inst-accent)}
+.instDataStatus{font-weight:650;max-width:290px;white-space:normal}
+.instDataStatus.stale,.instDataStatus.unavailable{border-color:#9d6257;background:#402820;color:#ffd1c6}
+.instUnavailable{background:#302324;border:1px solid #765454;padding:20px 24px;border-radius:12px;color:#f8d6cc}
+.instUnavailable h3{margin:0 0 9px;font-size:16px}.instUnavailable p{margin:0;font-size:12px;line-height:1.6}
+/* Dense operator matrix: every unit is a count of open tasks in the fetched snapshot. */
+.instMatrixPanel{border:1px solid #384a4d;border-radius:13px;background:linear-gradient(135deg,#131c1f,#172226);padding:19px 22px;min-width:0;display:grid;gap:18px}
+.instMatrixHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.instMatrixHeader h3{font-size:18px;line-height:1.3;color:#eff7f1;letter-spacing:-.04em;margin:6px 0}
+.instMatrixHeader p{font-size:11px;line-height:1.55;color:#a4b7b1;margin:0}
+.instMicroLabel{font:700 10px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.09em;color:var(--inst-accent)}
+.instMatrixActions{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.instMatrixTotal{display:grid;text-align:right;gap:3px}
+.instMatrixTotal strong{font:750 26px/1 ui-monospace,SFMono-Regular,Consolas,monospace;color:#f1f7f2;font-variant-numeric:tabular-nums}
+.instMatrixTotal small{font-size:10px;color:#abbcb4}
+.instRoot button.instReset{border-color:#53635f;background:#283633;color:#d9f2e4;min-height:36px}
+.instMatrixScroll{max-width:100%;overflow-x:auto;scrollbar-gutter:stable}
+.instMatrixGrid{min-width:545px;display:grid;grid-template-columns:148px repeat(3,minmax(105px,1fr));gap:6px;align-items:stretch}
+.instMatrixCorner,.instMatrixColHeader{padding:7px 10px;color:#91afa1;font-size:10px;font-weight:750;letter-spacing:.02em}
+.instMatrixColHeader{text-align:center}
+.instMatrixRow{grid-column:1/-1;display:grid;grid-template-columns:148px repeat(3,minmax(105px,1fr));gap:6px;align-items:stretch}
+@supports (grid-template-columns:subgrid){.instMatrixRow{grid-template-columns:subgrid}}
+.instMatrixTeamLabel{padding:9px;display:flex;align-items:center;font-size:11px;font-weight:650;color:#d7e5de;border-bottom:1px solid #283c3e;min-width:0;overflow-wrap:anywhere}
+.instRoot button.instMatrixCell{min-height:45px;border-radius:7px;border:1px solid #435857;background:var(--inst-matrix-empty);color:#eaf4ec;display:flex;gap:5px;align-items:center;justify-content:center;position:relative;transition:transform var(--inst-motion-fast) ease,background var(--inst-motion-fast) ease,border-color var(--inst-motion-fast) ease}
+.instRoot button.instMatrixCell[data-heat="1"]{background:var(--inst-heat-low)}
+.instRoot button.instMatrixCell[data-heat="2"]{background:var(--inst-heat-mid)}
+.instRoot button.instMatrixCell[data-heat="3"]{background:var(--inst-heat-high)}
+.instRoot button.instMatrixCell[data-heat="4"]{background:var(--inst-heat-max);color:#0d1f18}
+.instRoot button.instMatrixCell:disabled{cursor:default;opacity:.58}
+.instRoot button.instMatrixCell:not(:disabled):hover{transform:translateY(-1px);border-color:#c0ead0}
+.instRoot button.instMatrixCell.isActive{box-shadow:inset 0 0 0 2px var(--inst-accent);border-color:var(--inst-accent)}
+.instMatrixCell strong{font:800 14px/1 ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums}
+.instMatrixCell small{font:700 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:#ffdbb7}
+.instMatrixCell[data-heat="4"] small{color:#303015}
+.instMatrixLegend{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:#9ab0a8;font-size:10px;line-height:1.55;border-top:1px solid #304447;padding-top:12px}
+.instMatrixLegend strong{color:#ffd4bb}
+.instLegendMark{width:9px;height:9px;border-radius:2px;background:var(--inst-heat-high);display:inline-block;vertical-align:middle;margin-right:8px}
+.instMatrixEmpty{padding:24px;background:#1b2829;border:1px dashed #405356;border-radius:10px;color:#bcd1c6;font-size:12px;line-height:1.65;text-align:center}
+/* Toolbar and detail inspector keep context and provide explicit reset/close controls. */
+.instRoot .instToolbar{background:#151f22;border:1px solid #324246;border-radius:12px;padding:14px;gap:10px}
+.instRoot .instToolbar>label{min-width:135px;flex:1}
+.instRoot .instToolbar>label:has(input[type="search"]){min-width:200px;flex:1.5}
+.instRoot .instToolbar select,.instRoot .instToolbar input{width:100%;min-width:0;color:#eff6f2;background:#1b292c}
+.instFilterCount{font:650 11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;white-space:nowrap;color:#acc7ba}
+.instInspectorToolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#1b292b;padding:9px 14px;border:1px solid #405254;border-radius:10px 10px 0 0;margin-top:3px;color:#e1eee5;font-size:12px}
+.instRoot .instInspectorToolbar button{background:transparent;border:0;color:#cbe3d8;text-decoration:underline;text-underline-offset:3px}
+.instRoot .ropsDetail{border-top-left-radius:0;border-top-right-radius:0;border-top:0}
+.instRoot .ropsColumns{scrollbar-gutter:stable}
+.instRoot .ropsLane{border-color:#334346;background:#182123}
+.instRoot .ropsCard{transition:border-color var(--inst-motion-fast) ease,box-shadow var(--inst-motion-fast) ease}
+.instRoot.instCompact{gap:12px}
+.instRoot.instCompact .ropsHero{padding:15px 20px}
+.instRoot.instCompact .ropsLane{padding:8px;min-height:195px}
+.instRoot.instCompact .ropsCard{padding:8px;gap:6px}
+.instRoot.instCompact .opsPulse{padding:13px 15px;gap:10px}
+.instRoot.instCompact .opsPulseTeams,.instRoot.instCompact .opsPulseHistory{padding:10px}
+.instRoot.instCompact .instMatrixPanel{padding:14px;gap:12px}
+@media(max-width:850px){.instMatrixPanel{padding:15px}.instContextStrip{flex-wrap:wrap}.instRoot .instToolbar>label{flex:1 1 145px}.instRoot .instToolbar>label:has(input[type="search"]){flex:1 1 100%}.instRoot button.instDensityToggle{margin-left:auto}}
+@media(max-width:560px){.instMatrixGrid{grid-template-columns:116px repeat(3,minmax(97px,1fr));min-width:430px}.instMatrixRow{grid-template-columns:116px repeat(3,minmax(97px,1fr))}.instMatrixHeader h3{font-size:16px}.instMatrixTotal{text-align:left}.instContextStrip{align-items:flex-start}.instRoot .ropsHero{padding:17px}.instRoot .instToolbar{padding:10px}.instRoot .ropsFactGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.premiumApp .navButton,.instRoot button.instMatrixCell,.instRoot .ropsCard{transition:none!important;animation:none!important}.instRoot button.instMatrixCell:not(:disabled):hover{transform:none}}

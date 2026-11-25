@@ -1,3 +1,9 @@
+# ShiftOS V1.5 RC1 — Decision-Oriented Instrumental Redesign
+
+Scoped graphite design tokens, exact open-work team × slot matrix with interactive **drill-down into the current task snapshot**, explicit stale/unavailable/fictional states, slot filter, inspector close and compact density control. Source: `lib/operations/instrumentation.mjs`. No fake booking or staffing KPIs. See `docs/INSTRUMENTAL_REDESIGN_V15.md` and `docs/IMPROVEMENT_LEDGER_V15.md`. No corporate cutover.
+
+---
+
 # V1.4 — Instrumental Rental Operations Motion
 
 Adds purpose-driven Motion transitions to task workflows, snapshot-only operational telemetry and a reusable project agent motion skill. No real-time claim or staffing target is inferred. See `docs/INSTRUMENTAL_MOTION_V14.md` and `skills/shiftos-motion/SKILL.md`. Preview remains synthetic/noncommercial; corporate SharePoint writes remain disabled.
