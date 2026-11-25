@@ -1,3 +1,18 @@
+# ShiftOS V1.5 RC1 — Instrumental Operations Dashboard
+
+The reference is a visual benchmark, not a source of product metrics. The new six-instrument panel is **integrated into the existing rental operations view in demo and private workspaces**, using only actual task records available in the selected station. This is not a separate mock application.
+
+- Event activity is charted only when actual history entries exist in the prior seven calendar days. Otherwise the chart displays an explicit missing-history message. No fabricated sparkline.
+- Slot histogram counts tasks, **not employee capacity**. The gauge is mathematically bounded: `(DONE+VERIFIED)/total`; the ring is `VERIFIED/(DONE+VERIFIED)`. Undefined denominators display `—`.
+- Team × slot heatmap, status composition, date/priority signals and task distribution are computed from the station-scoped task list.
+- All metric cards have keyboard-accessible Greek help bubbles (hover, focus, click); drilldowns filter actual tasks. Reduced-motion and responsive container density are supported.
+- Loading, empty, disconnected, stale and failed states are distinguished. The private board intentionally does not pretend to be a real-time stream.
+- No new paid dependencies, operational services, tenant permissions or company data. Source fields and backup infrastructure unchanged.
+
+See `docs/INSTRUMENTAL_OMEGA_V15.md` for metric source maps, limits, tests and rollback.
+
+---
+
 # V1.4 — Instrumental Rental Operations Motion
 
 Adds purpose-driven Motion transitions to task workflows, snapshot-only operational telemetry and a reusable project agent motion skill. No real-time claim or staffing target is inferred. See `docs/INSTRUMENTAL_MOTION_V14.md` and `skills/shiftos-motion/SKILL.md`. Preview remains synthetic/noncommercial; corporate SharePoint writes remain disabled.
